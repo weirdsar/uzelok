@@ -42,4 +42,4 @@ foreach ($accounts as $acc) {
     }
 }
 
-echo "\nСинхронизация сайта: php cron/sync.php (или database/seed.php) — каталог подтянется из всех кабинетов автоматически.\n";
+echo "\nСинхронизация сайта: php8.4 cron/sync.php (на Beget CLI часто нужен php8.4, не «php»).\n";
