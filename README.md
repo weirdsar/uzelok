@@ -88,9 +88,12 @@ Push в `main` → GitHub Actions → sFTP на Beget.
 
 ```bash
 cd /path/to/uzelok
-git remote add origin https://github.com/USER/REPO.git
-git push -u origin main
+git remote add origin https://github.com/weirdsar/uzelok.git
+# если на GitHub уже есть «Initial commit» только с README:
+git push -u origin main --force-with-lease
 ```
+
+В репозитории должна появиться папка `.github/workflows/deploy.yml`. Затем в **Settings → Secrets and variables → Actions** добавьте `BEGET_FTP_HOST`, `BEGET_FTP_USER`, `BEGET_FTP_PASSWORD`.
 
 После первого деплоя на сервере: `config/config.php`, при необходимости `.ozon.env`, затем `php database/init.php`, `php scripts/fill-seo-articles.php`, `php scripts/sync-user-infographics.php`, `php cron/sync.php`.
 

@@ -60,6 +60,8 @@ ROOT_ITEMS=(
   "templates"
   "cron"
   "database/migrations"
+  "database/init.php"
+  "scripts"
   "config/config.example.php"
   "composer.json"
   "composer.lock"
