@@ -130,6 +130,93 @@ final class OzonCatalogApi
     }
 
     /**
+     * Полный набор URL фото с витрины (часто больше, чем в /v3/product/info/list).
+     *
+     * @param list<int> $productIds
+     * @return array<int, list<string>> product_id → уникальные https URL
+     */
+    public function fetchProductPicturesByProductId(string $clientId, string $apiKey, array $productIds): array
+    {
+        $seenPid = [];
+        $clean = [];
+        foreach ($productIds as $pid) {
+            $p = (int) $pid;
+            if ($p > 0 && !isset($seenPid[$p])) {
+                $seenPid[$p] = true;
+                $clean[] = $p;
+            }
+        }
+        if ($clean === []) {
+            return [];
+        }
+
+        try {
+            $decoded = $this->post($clientId, $apiKey, '/v2/product/pictures/info', [
+                'product_id' => $clean,
+            ], 90);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $items = $decoded['result']['items'] ?? $decoded['result'] ?? $decoded['items'] ?? null;
+        if (!is_array($items)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($items as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $pid = (int) ($row['product_id'] ?? $row['id'] ?? 0);
+            if ($pid < 1) {
+                continue;
+            }
+            $urls = [];
+            foreach (['primary_photo', 'photo', 'color_photo', 'photo_360', 'images360'] as $field) {
+                self::collectPictureFieldUrls($row[$field] ?? null, $urls);
+            }
+            if ($urls !== []) {
+                $out[$pid] = OzonProductAttributes::mergeGalleryUrlLists($urls, []);
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<string> $urls
+     */
+    private static function collectPictureFieldUrls(mixed $v, array &$urls): void
+    {
+        if ($v === null) {
+            return;
+        }
+        if (is_string($v)) {
+            $n = OzonProductAttributes::normalizeImageUrl($v);
+            if ($n !== '') {
+                $urls[] = $n;
+            }
+
+            return;
+        }
+        if (!is_array($v)) {
+            return;
+        }
+        foreach ($v as $x) {
+            if (is_string($x)) {
+                self::collectPictureFieldUrls($x, $urls);
+            } elseif (is_array($x)) {
+                foreach (['url', 'link', 'file_name', 'src', 'image'] as $k) {
+                    if (isset($x[$k]) && is_string($x[$k])) {
+                        self::collectPictureFieldUrls($x[$k], $urls);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Full card description (not included in /v3/product/info/list).
      */
     public function fetchProductDescription(string $clientId, string $apiKey, int $productId): string

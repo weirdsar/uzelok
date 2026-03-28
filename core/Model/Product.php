@@ -113,6 +113,7 @@ ON CONFLICT(sku) DO UPDATE SET
     gallery_json = excluded.gallery_json,
     videos_json = excluded.videos_json,
     seo_article = CASE WHEN excluded.seo_article != '' THEN excluded.seo_article ELSE products.seo_article END,
+    user_gallery_json = products.user_gallery_json,
     sort_order = CASE WHEN excluded.sort_order = 0 THEN products.sort_order ELSE excluded.sort_order END,
     is_active = 1,
     updated_at = datetime('now')

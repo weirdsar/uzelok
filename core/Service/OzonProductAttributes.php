@@ -162,9 +162,66 @@ final class OzonProductAttributes
      * @param array<string, bool> $seen
      * @param list<string> $out
      */
+    /**
+     * Приводит URL картинки к https-строке (Ozon иногда отдаёт //cdn… без схемы).
+     */
+    public static function normalizeImageUrl(string $u): string
+    {
+        $u = trim($u);
+        if ($u === '') {
+            return '';
+        }
+        if (str_starts_with($u, '//')) {
+            return 'https:' . $u;
+        }
+        if (str_starts_with($u, 'http://') || str_starts_with($u, 'https://')) {
+            return $u;
+        }
+
+        return '';
+    }
+
+    /**
+     * Объединяет списки URL без дублей; порядок: сначала $primary, затем $secondary.
+     *
+     * @param list<string> $primary
+     * @param list<string> $secondary
+     * @return list<string>
+     */
+    public static function mergeGalleryUrlLists(array $primary, array $secondary): array
+    {
+        $seen = [];
+        $out = [];
+        $push = static function (string $raw) use (&$seen, &$out): void {
+            $u = self::normalizeImageUrl($raw);
+            if ($u === '' || self::looksLikeVideoUrl($u)) {
+                return;
+            }
+            if (isset($seen[$u])) {
+                return;
+            }
+            $seen[$u] = true;
+            $out[] = $u;
+        };
+
+        foreach ($primary as $x) {
+            if (is_string($x)) {
+                $push($x);
+            }
+        }
+        foreach ($secondary as $x) {
+            if (is_string($x)) {
+                $push($x);
+            }
+        }
+
+        return $out;
+    }
+
     private static function appendHttpsImageUrl(string $u, array &$seen, array &$out): void
     {
-        if (!str_starts_with($u, 'http')) {
+        $u = self::normalizeImageUrl($u);
+        if ($u === '') {
             return;
         }
         if (self::looksLikeVideoUrl($u)) {

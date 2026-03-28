@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 /**
  * Копирует файлы из user_content/ в public_html/assets/images/user-content/
- * и записывает пути в products.user_gallery_json по шаблону имени: id.{product_id}_infografika.ext
+ * и записывает пути в products.user_gallery_json (не затирается синком Ozon).
  *
- * CLI: php scripts/sync-user-infographics.php
+ * Имена файлов (один товар — несколько файлов, порядок = сортировка по имени):
+ *   id.{internal_db_id}_infografika.ext   — по полю products.id (старый способ)
+ *   ozon.{ozon_product_id}_infografika.ext — по products.sku (= Ozon product_id после мульти-синка)
+ *
+ * CLI: php8.4 scripts/sync-user-infographics.php
  */
 
 require dirname(__DIR__) . '/vendor/autoload.php';
@@ -36,13 +40,17 @@ if (!is_dir($destDir) && !mkdir($destDir, 0755, true) && !is_dir($destDir)) {
     exit(1);
 }
 
-/** @var array<int, list<string>> $idToDestBasenames */
-$idToDestBasenames = [];
+/** @var array<int, list<string>> $productIdToBasenames */
+$productIdToBasenames = [];
+
 $files = scandir($srcDir);
 if ($files === false) {
     fwrite(STDERR, "Cannot read user_content.\n");
     exit(1);
 }
+
+$pdo = Database::getInstance($dbPath)->getConnection();
+$resolveSku = $pdo->prepare('SELECT id FROM products WHERE sku = :sku LIMIT 1');
 
 foreach ($files as $base) {
     if ($base === '.' || $base === '..') {
@@ -52,33 +60,50 @@ foreach ($files as $base) {
     if (!is_file($full)) {
         continue;
     }
-    if (preg_match('/^id\.(\d+)_infografika\.[a-z0-9]+$/i', $base, $m) !== 1) {
+
+    $targetProductId = null;
+    if (preg_match('/^id\.(\d+)_infografika\.[a-z0-9]+$/i', $base, $m) === 1) {
+        $targetProductId = (int) $m[1];
+    } elseif (preg_match('/^ozon\.(\d+)_infografika\.[a-z0-9]+$/i', $base, $m) === 1) {
+        $sku = (string) $m[1];
+        $resolveSku->execute([':sku' => $sku]);
+        $row = $resolveSku->fetch(\PDO::FETCH_ASSOC);
+        if ($row === false) {
+            echo "skip (no product sku={$sku}): {$base}\n";
+            continue;
+        }
+        $targetProductId = (int) $row['id'];
+    } else {
         echo "skip (pattern): {$base}\n";
         continue;
     }
-    $pid = (int) $m[1];
+
     $dest = $destDir . DIRECTORY_SEPARATOR . $base;
     if (!copy($full, $dest)) {
         fwrite(STDERR, "copy failed: {$base}\n");
         continue;
     }
-    $idToDestBasenames[$pid][] = $base;
     echo "copied {$base} -> user-content/\n";
+
+    if (!isset($productIdToBasenames[$targetProductId])) {
+        $productIdToBasenames[$targetProductId] = [];
+    }
+    $productIdToBasenames[$targetProductId][] = $base;
 }
 
-if ($idToDestBasenames === []) {
-    echo "No matching id.NNN_infografika.* files in user_content/.\n";
+if ($productIdToBasenames === []) {
+    echo "No matching id.* / ozon.* infographics in user_content/.\n";
     exit(0);
 }
 
-ksort($idToDestBasenames, SORT_NUMERIC);
+ksort($productIdToBasenames, SORT_NUMERIC);
 
-$pdo = Database::getInstance($dbPath)->getConnection();
 $check = $pdo->prepare('SELECT id FROM products WHERE id = :id LIMIT 1');
 $upd = $pdo->prepare('UPDATE products SET user_gallery_json = :j, updated_at = datetime(\'now\') WHERE id = :id');
 
 $updated = 0;
-foreach ($idToDestBasenames as $pid => $basenames) {
+foreach ($productIdToBasenames as $pid => $basenames) {
+    $basenames = array_values(array_unique($basenames));
     sort($basenames, SORT_STRING);
     $check->execute([':id' => $pid]);
     if ($check->fetchColumn() === false) {

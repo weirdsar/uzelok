@@ -80,8 +80,8 @@ final class SyncController
                     $longDesc = $this->ozon->fetchProductDescription($pid);
                     $imgUrl = OzonProductAttributes::extractPrimaryImageUrl($item);
                     $videoCtx = $this->videoContextsForProductId($attrsByPid, $pid);
-                    $upsert = $this->mapItemToUpsert($item, $sku, null, $longDesc, $imgUrl, $videoCtx);
-                    $upsert = $this->maybeDownloadProductImage($upsert, $imgUrl);
+                    $upsert = $this->mapItemToUpsert($item, $sku, null, $longDesc, $imgUrl, $videoCtx, []);
+                    $upsert = $this->maybeDownloadProductImage($upsert, (string) ($upsert['image_ozon_url'] ?? ''));
                     if ($this->product->upsertFromOzon($upsert)) {
                         ++$updated;
                     }
@@ -201,6 +201,9 @@ final class SyncController
                             );
                         }
                     }
+                    $picturesByPid = $pidsChunk !== []
+                        ? $catalog->fetchProductPicturesByProductId($clientId, $apiKey, $pidsChunk)
+                        : [];
                     foreach ($items as $item) {
                         if (!is_array($item)) {
                             continue;
@@ -219,8 +222,9 @@ final class SyncController
                             : '';
                         $imgUrl = OzonProductAttributes::extractPrimaryImageUrl($item);
                         $videoCtx = $this->videoContextsForProductId($attrsByPid, $productId);
-                        $upsert = $this->mapItemToUpsert($item, $storageSku, $brand, $longDesc, $imgUrl, $videoCtx);
-                        $upsert = $this->maybeDownloadProductImage($upsert, $imgUrl);
+                        $extraPics = $picturesByPid[$productId] ?? [];
+                        $upsert = $this->mapItemToUpsert($item, $storageSku, $brand, $longDesc, $imgUrl, $videoCtx, $extraPics);
+                        $upsert = $this->maybeDownloadProductImage($upsert, (string) ($upsert['image_ozon_url'] ?? ''));
                         if ($this->product->upsertFromOzon($upsert)) {
                             ++$updated;
                         }
@@ -272,6 +276,7 @@ final class SyncController
      */
     /**
      * @param list<array<string, mixed>> $extraVideoContexts
+     * @param list<string> $extraGalleryUrls сначала подмешиваются URL из /v2/product/pictures/info (полная галерея)
      */
     private function mapItemToUpsert(
         array $item,
@@ -280,6 +285,7 @@ final class SyncController
         string $apiDescription = '',
         ?string $primaryImageOverride = null,
         array $extraVideoContexts = [],
+        array $extraGalleryUrls = [],
     ): array {
         $offerId = trim((string) ($item['offer_id'] ?? $item['sku'] ?? ''));
         $brandType = $fixedBrandType
@@ -292,9 +298,13 @@ final class SyncController
         $descSource = $apiDescription !== '' ? $apiDescription : (string) ($item['description'] ?? '');
         $description = OzonProductAttributes::normalizeDescription($descSource);
 
-        $imageOzonUrl = $primaryImageOverride ?? OzonProductAttributes::extractPrimaryImageUrl($item);
-
-        $galleryUrls = OzonProductAttributes::extractGalleryUrls($item);
+        $galleryUrls = OzonProductAttributes::mergeGalleryUrlLists(
+            $extraGalleryUrls,
+            OzonProductAttributes::extractGalleryUrls($item)
+        );
+        $imageOzonUrl = $galleryUrls !== []
+            ? $galleryUrls[0]
+            : ($primaryImageOverride ?? OzonProductAttributes::extractPrimaryImageUrl($item));
         try {
             $galleryJson = json_encode($galleryUrls, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         } catch (\JsonException) {
