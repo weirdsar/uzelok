@@ -84,6 +84,16 @@ Push в `main` → GitHub Actions → sFTP на Beget.
 
 Необходимые секреты: `BEGET_FTP_HOST`, `BEGET_FTP_USER`, `BEGET_FTP_PASSWORD`.
 
+### Первый push (репозиторий создан на GitHub)
+
+```bash
+cd /path/to/uzelok
+git remote add origin https://github.com/USER/REPO.git
+git push -u origin main
+```
+
+После первого деплоя на сервере: `config/config.php`, при необходимости `.ozon.env`, затем `php database/init.php`, `php scripts/fill-seo-articles.php`, `php scripts/sync-user-infographics.php`, `php cron/sync.php`.
+
 ## Cron (Beget)
 
 Ежедневная синхронизация с Ozon (подставьте свой путь к домашней директории на сервере):
