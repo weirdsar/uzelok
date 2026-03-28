@@ -10,6 +10,7 @@ name: Deploy to Beget
 on:
   push:
     branches: [main]
+  workflow_dispatch: # Ручной запуск: Actions → Deploy to Beget → Run workflow
 
 jobs:
   lint:
