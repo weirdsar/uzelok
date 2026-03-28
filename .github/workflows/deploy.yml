@@ -49,6 +49,17 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction
 
+      - name: Require Beget FTP secrets
+        env:
+          BEGET_FTP_HOST: ${{ secrets.BEGET_FTP_HOST }}
+          BEGET_FTP_USER: ${{ secrets.BEGET_FTP_USER }}
+          BEGET_FTP_PASSWORD: ${{ secrets.BEGET_FTP_PASSWORD }}
+        run: |
+          if [ -z "$BEGET_FTP_HOST" ] || [ -z "$BEGET_FTP_USER" ] || [ -z "$BEGET_FTP_PASSWORD" ]; then
+            echo "::error::Нет секретов FTP. Репозиторий → Settings → Secrets and variables → Actions → New repository secret. Нужны: BEGET_FTP_HOST (часто ftp.beget.com), BEGET_FTP_USER, BEGET_FTP_PASSWORD — как в панели Beget (FTP)."
+            exit 1
+          fi
+
       - name: Deploy via sFTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
