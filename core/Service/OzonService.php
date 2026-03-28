@@ -141,13 +141,46 @@ final class OzonService
     }
 
     /**
+     * Optional offer_id → главное фото витрины Ozon (HTTPS), для мок-режима без Seller API.
+     *
+     * @return array<string, string>
+     */
+    private function loadStorefrontImageUrlsByOfferId(): array
+    {
+        $path = dirname(__DIR__, 2) . '/config/ozon_storefront_images.local.php';
+        if (!is_file($path)) {
+            return [];
+        }
+
+        /** @var mixed $loaded */
+        $loaded = require $path;
+        if (!is_array($loaded)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($loaded as $k => $v) {
+            if (is_string($k) && is_string($v)) {
+                $u = trim($v);
+                if ($u !== '' && str_starts_with($u, 'http')) {
+                    $out[$k] = $u;
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     private function getMockData(): array
     {
         // TODO: prices and descriptions are placeholders — real data comes from Ozon API sync.
 
-        return [
+        $storefront = $this->loadStorefrontImageUrlsByOfferId();
+
+        $rows = [
             [
                 'id' => 3526089555,
                 'offer_id' => 'BUY-DOMKRAT',
@@ -259,6 +292,23 @@ final class OzonService
                 'sort_order' => 300,
             ],
         ];
+
+        foreach ($rows as &$row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $oid = (string) ($row['offer_id'] ?? '');
+            if ($oid === '') {
+                continue;
+            }
+            $u = $storefront[$oid] ?? '';
+            if ($u !== '') {
+                $row['primary_image'] = [$u];
+            }
+        }
+        unset($row);
+
+        return $rows;
     }
 
     private function usesPlaceholderCredentials(): bool

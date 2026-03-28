@@ -17,3 +17,4 @@ config/config.php
 node_modules/
 public_html/.user.ini
 scripts/ozon-image-urls.local.php
+config/ozon_storefront_images.local.php
