@@ -4,6 +4,11 @@
 # BEGET_FTP_PASSWORD — FTP password
 #
 # Settings → Secrets and variables → Actions → New repository secret
+#
+# Отдельный FTP Beget (логин вида *_site, корень = уже папка домена):
+# Settings → Secrets and variables → Actions → Variables → BEGET_FTP_SERVER_DIR = ./
+# Иначе с server-dir uzelok64.ru/ файлы попадут в uzelok64.ru/uzelok64.ru/, сайт останется старым.
+# Основной FTP (корень аккаунта): переменную не задавать — будет uzelok64.ru/
 
 name: Deploy to Beget
 
@@ -66,7 +71,8 @@ jobs:
           server: ${{ secrets.BEGET_FTP_HOST }}
           username: ${{ secrets.BEGET_FTP_USER }}
           password: ${{ secrets.BEGET_FTP_PASSWORD }}
-          server-dir: /uzelok64.ru/
+          # Trailing slash required by the action. Sub-FTP chroot → set repo var BEGET_FTP_SERVER_DIR=./
+          server-dir: ${{ vars.BEGET_FTP_SERVER_DIR != '' && vars.BEGET_FTP_SERVER_DIR || 'uzelok64.ru/' }}
           exclude: |
             **/.git*
             **/.git*/**
