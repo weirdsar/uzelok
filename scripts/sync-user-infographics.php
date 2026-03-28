@@ -7,8 +7,10 @@ declare(strict_types=1);
  * и записывает пути в products.user_gallery_json (не затирается синком Ozon).
  *
  * Имена файлов (один товар — несколько файлов, порядок = сортировка по имени):
- *   id.{internal_db_id}_infografika.ext   — по полю products.id (старый способ)
- *   ozon.{ozon_product_id}_infografika.ext — по products.sku (= Ozon product_id после мульти-синка)
+ *   id.{internal_db_id}_infografika.ext — по products.id
+ *   id.{id}_infografika_01.ext … — порядок по имени файла
+ *   ozon.{ozon_product_id}_infografika.ext — по products.sku (= Ozon product_id)
+ *   ozon.{id}_infografika_01.ext … — то же + порядок слайдов
  *
  * CLI: php8.4 scripts/sync-user-infographics.php
  */
@@ -62,9 +64,9 @@ foreach ($files as $base) {
     }
 
     $targetProductId = null;
-    if (preg_match('/^id\.(\d+)_infografika\.[a-z0-9]+$/i', $base, $m) === 1) {
+    if (preg_match('/^id\.(\d+)_infografika(?:_[^.]+)?\.[a-z0-9]+$/i', $base, $m) === 1) {
         $targetProductId = (int) $m[1];
-    } elseif (preg_match('/^ozon\.(\d+)_infografika\.[a-z0-9]+$/i', $base, $m) === 1) {
+    } elseif (preg_match('/^ozon\.(\d+)_infografika(?:_[^.]+)?\.[a-z0-9]+$/i', $base, $m) === 1) {
         $sku = (string) $m[1];
         $resolveSku->execute([':sku' => $sku]);
         $row = $resolveSku->fetch(\PDO::FETCH_ASSOC);
