@@ -40,6 +40,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo, pdo_sqlite, curl, mbstring, json
+
       - name: Install Composer dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction
 
