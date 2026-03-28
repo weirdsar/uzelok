@@ -20,7 +20,8 @@ function formatPrice(int $priceRub): string
 }
 
 /**
- * URLs for product gallery: user infographics first (user_gallery_json), then local main, Ozon CDN, primary Ozon URL.
+ * URLs for product gallery: user infographics first, then Ozon API (gallery + primary), then local file.
+ * Local comes after Ozon so stale demo/Picsum files under image_local_path do not hide real CDN URLs after sync.
  *
  * @param array<string, mixed> $product DB row
  * @return list<string>
@@ -57,11 +58,6 @@ function productGalleryUrls(array $product): array
         }
     }
 
-    $local = trim((string) ($product['image_local_path'] ?? ''));
-    if ($local !== '') {
-        $push(str_starts_with($local, 'http') ? $local : '/' . ltrim($local, '/'));
-    }
-
     $gj = trim((string) ($product['gallery_json'] ?? ''));
     if ($gj !== '') {
         try {
@@ -80,6 +76,11 @@ function productGalleryUrls(array $product): array
     $oz = trim((string) ($product['image_ozon_url'] ?? ''));
     if ($oz !== '' && str_starts_with($oz, 'http')) {
         $push($oz);
+    }
+
+    $local = trim((string) ($product['image_local_path'] ?? ''));
+    if ($local !== '') {
+        $push(str_starts_with($local, 'http') ? $local : '/' . ltrim($local, '/'));
     }
 
     return $out;
