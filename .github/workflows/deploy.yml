@@ -65,6 +65,16 @@ jobs:
             exit 1
           fi
 
+      - name: FTP server-dir (проверка пути)
+        env:
+          RESOLVED_SERVER_DIR: ${{ vars.BEGET_FTP_SERVER_DIR != '' && vars.BEGET_FTP_SERVER_DIR || 'uzelok64.ru/' }}
+        run: |
+          echo "Переменная BEGET_FTP_SERVER_DIR (repo Variables): '${{ vars.BEGET_FTP_SERVER_DIR }}'"
+          echo "Итоговый server-dir для деплоя: $RESOLVED_SERVER_DIR"
+          if [ "$RESOLVED_SERVER_DIR" = "uzelok64.ru/" ]; then
+            echo "::notice::Если у вас отдельный FTP Beget (корень = папка сайта), добавьте Variables → BEGET_FTP_SERVER_DIR = ./ иначе файлы уйдут в uzelok64.ru/uzelok64.ru/ и на сайте будет старая версия."
+          fi
+
       - name: Deploy via sFTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
