@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /submit-form.php
+
+Sitemap: https://uzelok64.ru/sitemap.xml
+
+# УЗЕЛОК64 — хозтовары, автоаксессуары, снаряжение для туризма

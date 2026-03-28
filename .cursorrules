@@ -1,0 +1,234 @@
+# =============================================
+# .cursorrules — УЗЕЛОК64 (uzelok64.ru)
+# Project Rules for Cursor AI
+# =============================================
+
+## 📋 Project Overview
+- **Project**: uzelok64.ru — multi-brand product showcase + engineering-sewing workshop
+- **Brands**:
+  - БАТЯ (BATYA) — household goods / хозтовары
+  - БУЙ (BUY) — auto/moto/water transport accessories
+  - ВОЛНА (VOLNA) — hunting, fishing, tourism
+- **Workshop**: Engineering-sewing workshop in Solnechny (Saratov) — pattern engineering, prototype creation
+- **Business model**: Direct sales from own site (bypass Ozon commission); fallback — redirect to Ozon product page
+- **Hosting**: Beget (PHP 8.4), deploy via Git + GitHub Actions
+
+## 🛠 Tech Stack
+- **Backend**: PHP 8.4 (pure PHP, NO frameworks)
+  - Use: Enums, Readonly properties, Constructor promotion, match expressions, named arguments
+  - PSR-4 autoloading via Composer
+- **Database**: SQLite (single file at `database/uzelok64.db`)
+- **Frontend**: Tailwind CSS (CDN for dev, compiled for production)
+  - Vanilla JS for interactivity (no jQuery, no React, no Vue)
+  - `<dialog>` element for modals
+- **Integrations**:
+  - Ozon Seller API (product sync)
+  - Telegram Bot API (order notifications)
+- **No frameworks**: Do NOT use Laravel, Symfony, Slim, Yii, or any PHP framework
+- **No JS frameworks**: Do NOT use React, Vue, Angular, jQuery
+
+## 📁 Project Structure
+uzelok64/
+├── .cursorrules
+├── .github/workflows/deploy.yml
+├── composer.json # PSR-4 autoload only
+├── public_html/ # Document root (Beget)
+│ ├── index.php # Front controller
+│ ├── submit-form.php # Form handler (POST)
+│ ├── .htaccess
+│ ├── robots.txt
+│ ├── sitemap.xml
+│ └── assets/
+│ ├── css/app.css
+│ ├── js/app.js # Vanilla JS (modals, filters, forms)
+│ └── images/
+│ ├── brands/ # Brand logos
+│ ├── products/ # Product photos (synced from Ozon)
+│ ├── workshop/ # Workshop photos
+│ └── ui/ # UI elements (hero bg, icons)
+├── core/ # PHP application code
+│ ├── Config.php
+│ ├── Database.php # PDO SQLite wrapper
+│ ├── Enum/Brand.php # Enum Brand: BATYA, BUY, VOLNA
+│ ├── Model/Product.php # Product model (CRUD)
+│ ├── Service/
+│ │ ├── OzonService.php # Ozon Seller API
+│ │ └── TelegramService.php # Telegram Bot API
+│ └── Controller/SyncController.php
+├── admin/sync.php # Protected admin page (HTTP Auth)
+├── database/
+│ ├── uzelok64.db # SQLite file (gitignored)
+│ └── schema.sql
+├── logs/sync.log # Gitignored
+├── config/
+│ ├── config.php # Main config (gitignored on prod)
+│ └── config.example.php # Template (committed)
+├── templates/
+│ ├── layout.php
+│ ├── header.php
+│ ├── footer.php
+│ ├── home.php
+│ ├── catalog.php
+│ ├── product-card.php
+│ ├── workshop.php
+│ ├── contact.php
+│ └── modals/order-modal.php
+└── cron/sync.php # Cron entry point
+
+text
+
+
+## 🗄 Database Schema
+```sql
+CREATE TABLE IF NOT EXISTS products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sku TEXT NOT NULL UNIQUE,
+    brand_type TEXT NOT NULL CHECK(brand_type IN ('batya', 'buy', 'volna')),
+    title TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    price_ozon INTEGER NOT NULL DEFAULT 0,
+    price_direct INTEGER DEFAULT NULL,
+    ozon_url TEXT NOT NULL DEFAULT '',
+    image_local_path TEXT DEFAULT '',
+    is_active INTEGER NOT NULL DEFAULT 1,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_products_brand ON products(brand_type);
+CREATE INDEX idx_products_active ON products(is_active);
+CREATE INDEX idx_products_sku ON products(sku);
+
+CREATE TABLE IF NOT EXISTS submissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    email TEXT DEFAULT '',
+    product_id INTEGER DEFAULT NULL,
+    message TEXT DEFAULT '',
+    source TEXT DEFAULT 'website',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+CREATE TABLE IF NOT EXISTS sync_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    started_at DATETIME NOT NULL,
+    finished_at DATETIME DEFAULT NULL,
+    status TEXT DEFAULT 'running',
+    products_updated INTEGER DEFAULT 0,
+    errors TEXT DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+🎨 Design & UI
+Theme: Industrial Dark Mode
+Color palette:
+Background primary: #0a0a0f
+Background secondary: #12121a
+Background tertiary: #1a1a2e
+Surface: #1e1e2e
+Border: #2a2a3e
+Text primary: #e8e8f0
+Text secondary: #a0a0b8
+Text muted: #6b6b80
+Accent (orange): #f97316
+Accent hover: #ea580c
+Brand colors:
+BATYA: #d97706 (amber)
+BUY: #2563eb (blue)
+VOLNA: #059669 (emerald)
+Fonts:
+Primary: Inter (sans-serif) — all UI text
+Mono: JetBrains Mono — prices, numbers, technical data
+Responsiveness: mobile-first, breakpoints sm(640px), md(768px), lg(1024px), xl(1280px)
+JavaScript:
+Brand filtering without page reload (fetch + DOM update)
+Modals: pure JS with native <dialog> element
+Forms submitted via fetch() with JSON server response handling
+Smooth scrolling for anchor navigation
+Icons: inline SVG or emoji (🔧 БАТЯ, 🚗 БУЙ, 🎣 ВОЛНА)
+📦 Coding Standards
+Always declare(strict_types=1); at the top of every PHP file
+Naming:
+Classes: StudlyCaps
+Methods: camelCase
+Constants: UPPER_SNAKE_CASE
+Variables: camelCase
+DB columns: snake_case
+PSR-12 formatting (enforce with php-cs-fixer)
+Type declarations: use for ALL properties, parameters, return types
+SQL: ONLY PDO prepared statements with named params; NEVER string concatenation
+Error handling: try/catch inside services, log to file, re-throw to controller level
+Logging format: [YYYY-MM-DD HH:MM:SS] [LEVEL] Message (INFO, WARNING, ERROR)
+Paths: absolute paths via __DIR__ and constants from config.php
+Security:
+CSRF tokens on ALL forms (generate + validate)
+Server-side input validation and sanitization
+htmlspecialchars() for ALL output
+.htaccess protection for sensitive directories (core/, config/, database/, logs/)
+🔌 Ozon Seller API Integration
+Base URL: https://api-seller.ozon.ru
+Auth headers:
+Client-Id: {OZON_CLIENT_ID}
+Api-Key: {OZON_API_KEY}
+Primary endpoint: POST /v3/product/info/list
+Request body: {"offer_id": ["SKU1", "SKU2", ...]}
+Sync strategy:
+SKU list stored in config/config.php
+Cron runs daily at 03:00 MSK
+Admin can trigger manual sync via admin/sync.php
+On sync: update price, title, description, image, is_active
+If product missing from API → set is_active = 0
+API keys: placeholders until real keys provided
+OZON_CLIENT_ID = 'your_client_id_here'
+OZON_API_KEY = 'your_api_key_here'
+📱 Telegram Integration
+API URL: https://api.telegram.org/bot{TOKEN}/sendMessage
+Parameters: chat_id, text, parse_mode: HTML
+Message format:
+text
+
+🆕 Новая заявка с сайта uzelok64.ru
+
+👤 Имя: {name}
+📞 Телефон: {phone}
+📧 Email: {email}
+📦 Товар: {product_title}
+💬 Комментарий: {message}
+
+🕐 {datetime}
+Placeholders:
+TELEGRAM_BOT_TOKEN = 'your_bot_token_here'
+TELEGRAM_CHAT_ID = 'your_chat_id_here'
+🚀 Deployment & CI/CD
+GitHub Actions (.github/workflows/deploy.yml):
+Trigger: push to main
+Steps: checkout → PHP lint → php-cs-fixer (dry-run) → SFTP upload to Beget
+Exclude: .git, node_modules, .env, database/*.db, logs/*
+Pre-deploy checklist:
+config/config.php exists on server (not overwritten)
+database/ and logs/ have write permissions (chmod 755)
+PHP 8.4 active on Beget; SQLite extension enabled
+.htaccess: rewrite to index.php, deny access to sensitive dirs, gzip, HTTPS redirect, security headers
+🧪 Local Development
+Dev server: php -S localhost:8000 -t public_html
+Without Ozon API keys: OzonService returns mock data from config/mock-products.json
+Tailwind CDN for dev; compiled for production
+DB auto-creates on first run if file missing
+🤖 AI-Specific Instructions (Cursor)
+Strictly follow all rules in this file when generating code
+Never suggest Laravel, Symfony, Slim, Yii, jQuery, React, Vue, Angular
+Always use PDO prepared statements with named parameters for ALL SQL
+Before creating a new class, check if existing class in core/ can be reused
+Forms: always include CSRF token generation and validation
+Logs: English messages, ISO 8601 timestamp, severity level
+Comments: explain complex logic only; no obvious comments
+File placement: EXACTLY in directories described in Project Structure
+PHP 8.4 features: use enums, readonly, constructor promotion, match, named args
+Templates: plain PHP with <?= htmlspecialchars($var) ?> for output
+Config: NEVER hardcode credentials; read from config or env
+Images: product images → public_html/assets/images/products/{sku}.jpg
+🔄 Updating Rules
+Update this file when requirements change
+AI must read this file before starting any task
+Version: 1.0.0

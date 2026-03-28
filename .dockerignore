@@ -1,0 +1,6 @@
+.git
+.beget.env
+*.log
+visits.log
+_check_*.html
+_check_*.txt

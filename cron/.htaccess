@@ -1,0 +1,2 @@
+# Deny all web access (defense in depth if document root is misconfigured)
+Require all denied

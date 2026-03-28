@@ -1,0 +1,24 @@
+services:
+  web:
+    image: php:8.4-apache
+    container_name: uzelok64-local
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html
+    command:
+      - bash
+      - -c
+      - |
+          set -e
+          sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public_html|g' /etc/apache2/sites-available/000-default.conf
+          if ! grep -q 'AllowOverride All' /etc/apache2/sites-available/000-default.conf; then
+            sed -i '/<\/VirtualHost>/i\
+            <Directory /var/www/html/public_html>\
+                AllowOverride All\
+                Require all granted\
+            </Directory>' /etc/apache2/sites-available/000-default.conf
+          fi
+          a2enmod rewrite
+          exec apache2-foreground
+    restart: unless-stopped

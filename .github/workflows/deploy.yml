@@ -1,0 +1,63 @@
+# Required GitHub Secrets:
+# BEGET_FTP_HOST — ftp.beget.com (or your panel host)
+# BEGET_FTP_USER — FTP login on Beget
+# BEGET_FTP_PASSWORD — FTP password
+#
+# Settings → Secrets and variables → Actions → New repository secret
+
+name: Deploy to Beget
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo, pdo_sqlite, curl, mbstring, json
+          tools: php-cs-fixer
+
+      - name: PHP syntax check
+        run: |
+          find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \;
+
+      - name: Check coding standards (dry-run)
+        run: |
+          php-cs-fixer fix --dry-run --diff --rules=@PSR12 core/ public_html/ || true
+        continue-on-error: true
+
+  deploy:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Deploy via sFTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.BEGET_FTP_HOST }}
+          username: ${{ secrets.BEGET_FTP_USER }}
+          password: ${{ secrets.BEGET_FTP_PASSWORD }}
+          server-dir: /uzelok64.ru/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            docker-compose.yml
+            Dockerfile
+            .env
+            database/*.db
+            logs/*.log
+            memory.md
+            README.md
+            .cursorrules

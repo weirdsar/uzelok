@@ -1,0 +1,4 @@
+# Deny direct HTTP access to visit logs
+<Files "visits.log">
+    Require all denied
+</Files>

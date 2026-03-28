@@ -1,0 +1,63 @@
+# UZELOK64 — Apache 2.4 (Beget). Local dev: HTTPS redirect skipped for localhost.
+
+# === HTTPS redirect (skip localhost / 127.0.0.1) ===
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Block sensitive top-level paths (defense if docroot is misconfigured)
+    RewriteRule ^(config|core|database|logs|cron|vendor)(/|$) - [F,L]
+
+    RewriteCond %{HTTP_HOST} !^localhost(:\d+)?$ [NC]
+    RewriteCond %{HTTP_HOST} !^127\.0\.0\.1(:\d+)?$ [NC]
+    RewriteCond %{HTTPS} !=on
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+    # === www → non-www ===
+    RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+    RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+
+    # === Front controller (skip real files & dirs) ===
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# === Block sensitive extensions ===
+<FilesMatch "\.(sql|db|sqlite|log|md|json|lock|yml|yaml)$">
+    Require all denied
+</FilesMatch>
+
+Options -Indexes
+
+# === Security headers ===
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+</IfModule>
+
+# === Gzip ===
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json text/xml
+</IfModule>
+
+# === Cache static assets ===
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/webp "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+</IfModule>
+
+# === PHP (mod_php only; on Beget CGI use .user.ini) ===
+<IfModule mod_php.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value max_execution_time 60
+    php_value display_errors Off
+    php_value log_errors On
+</IfModule>
