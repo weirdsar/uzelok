@@ -6,6 +6,7 @@ namespace Uzelok\Core\Service;
 
 /**
  * Reads multi-cabinet Ozon API credentials from project root `.ozon.env`.
+ * Шаблон формата: `ozon.env.example` в корне репозитория.
  *
  * Expected lines (example):
  *   БУЙ 527927  <api-key-uuid>

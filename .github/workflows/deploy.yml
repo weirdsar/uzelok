@@ -90,6 +90,8 @@ jobs:
             docker-compose.yml
             Dockerfile
             .env
+            .ozon.env
+            .beget.env
             database/*.db
             logs/*.log
             memory.md

@@ -18,13 +18,15 @@ return [
         'images' => dirname(__DIR__) . '/public_html/assets/images',
     ],
     'ozon' => [
+        // Продакшен (три кабинета): скопируйте `ozon.env.example` в корень сайта как `.ozon.env`, заполните ключи.
+        // `client_id` / `api_key` здесь оставьте пустыми. Затем по SSH: `php cron/sync.php`.
+        // Один кабинет: заполните `client_id`, `api_key` и список `skus`; `.ozon.env` не нужен.
         'client_id' => '',
         'api_key' => '',
         'base_url' => 'https://api-seller.ozon.ru',
 
-        // Мульти-кабинет: положите в корень проекта `.ozon.env` (см. `OzonEnvParser`) —
-        // синк сам подтянет все offer_id через POST /v3/product/list и детали через /v3/product/info/list.
-        // Иначе используются `skus` + один `client_id`/`api_key` ниже.
+        // Мульти-кабинет: `.ozon.env` в корне (см. `OzonEnvParser`, пример — `ozon.env.example`).
+        // Иначе — `skus` + один `client_id` / `api_key` выше.
 
         // Реальные Ozon Product ID для отслеживания
         'product_ids' => [

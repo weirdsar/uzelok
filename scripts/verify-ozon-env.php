@@ -18,7 +18,7 @@ $envFile = $root . DIRECTORY_SEPARATOR . '.ozon.env';
 
 $accounts = OzonEnvParser::tryLoadAccounts($envFile);
 if ($accounts === []) {
-    fwrite(STDERR, "Нет аккаунтов в {$envFile} (ожидаются строки: БУЙ|БАТЯ|ВОЛНА + Client-ID + API-Key).\n");
+    fwrite(STDERR, "Нет аккаунтов в {$envFile}. Скопируйте ozon.env.example → .ozon.env и заполните ключи (см. комментарии в примере).\n");
     exit(1);
 }
 
