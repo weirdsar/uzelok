@@ -45,6 +45,7 @@ echo "Seed completed:\n";
 echo '  Status: ' . ($result['status'] ?? '') . "\n";
 echo '  Products updated: ' . (string) ($result['updated'] ?? 0) . "\n";
 echo '  Products deactivated: ' . (string) ($result['deactivated'] ?? 0) . "\n";
+echo '  Active products: ' . (string) ($result['active_products'] ?? '?') . "\n";
 if (($result['errors'] ?? '') !== '') {
     echo '  Errors: ' . (string) $result['errors'] . "\n";
 }

@@ -50,7 +50,7 @@ function productOzonPurchaseUrl(array $product): string
 function productGalleryUrls(array $product): array
 {
     /** Bump when replacing user_content files so browsers bypass long-lived image cache (.htaccess Expires). */
-    $userContentVer = '6';
+    $userContentVer = '7';
 
     $withUserContentBust = static function (string $u) use ($userContentVer): string {
         if (!str_starts_with($u, '/assets/images/user-content/')) {

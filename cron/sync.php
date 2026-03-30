@@ -60,12 +60,13 @@ logLine(
 );
 
 $line = sprintf(
-    "[%s] sync status=%s updated=%d deactivated=%d errors=%s\n",
+    "[%s] sync status=%s updated=%d deactivated=%d active_products=%s errors=%s\n",
     gmdate('Y-m-d H:i:s'),
     $result['status'],
     $result['updated'],
     $result['deactivated'],
-    $result['errors']
+    (string) ($result['active_products'] ?? ''),
+    (string) ($result['errors'] ?? '')
 );
 echo $line;
 echo sprintf(

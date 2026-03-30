@@ -88,12 +88,6 @@ final class SyncController
                 }
             }
 
-            $preserved = $this->refreshPreservedProductsFromOzon();
-            if ($preserved > 0) {
-                $updated += $preserved;
-                logLine('INFO', 'Preserved products refreshed from Ozon by product_id: ' . $preserved, $this->logPath);
-            }
-
             $skipDeactivateAll = $this->ozonAccounts !== null
                 && $this->ozonAccounts !== []
                 && $activeSkus === []
@@ -120,7 +114,8 @@ final class SyncController
                 );
             }
 
-            $msg = sprintf('Ozon sync finished: updated=%d, deactivated=%d', $updated, $deactivated);
+            $activeProducts = $this->product->count(true);
+            $msg = sprintf('Ozon sync finished: updated=%d, deactivated=%d, active_products=%d', $updated, $deactivated, $activeProducts);
             logLine('INFO', $msg, $this->logPath);
 
             return [
@@ -128,6 +123,7 @@ final class SyncController
                 'updated' => $updated,
                 'deactivated' => $deactivated,
                 'errors' => '',
+                'active_products' => $activeProducts,
             ];
         } catch (\Throwable $e) {
             $err = $e->getMessage();
@@ -149,160 +145,9 @@ final class SyncController
                 'updated' => $updated,
                 'deactivated' => 0,
                 'errors' => $err,
+                'active_products' => $this->product->count(true),
             ];
         }
-    }
-
-    /**
-     * Товары с preserve_sync и числовым sku (= Ozon product_id), не попавшие в основной список по offer_id: подтягиваем цену и поля через /v3/product/info/list?product_id=...
-     *
-     * @return int число успешных upsert
-     */
-    private function refreshPreservedProductsFromOzon(): int
-    {
-        $pdo = $this->db->getConnection();
-        $stmt = $pdo->query(
-            "SELECT sku, brand_type FROM products WHERE COALESCE(preserve_sync,0)=1 AND sku GLOB '[0-9]*' AND length(sku) >= 8"
-        );
-        if ($stmt === false) {
-            return 0;
-        }
-        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        if ($rows === []) {
-            return 0;
-        }
-
-        /** @var array<string, string> $pending sku (product_id) => brand_type */
-        $pending = [];
-        foreach ($rows as $row) {
-            if (!is_array($row)) {
-                continue;
-            }
-            $sku = trim((string) ($row['sku'] ?? ''));
-            if ($sku === '') {
-                continue;
-            }
-            $pending[$sku] = (string) ($row['brand_type'] ?? 'batya');
-        }
-        if ($pending === []) {
-            return 0;
-        }
-
-        $catalog = new OzonCatalogApi($this->ozonApiBaseUrl);
-        $added = 0;
-
-        if ($this->ozonAccounts !== null && $this->ozonAccounts !== []) {
-            foreach ($this->ozonAccounts as $acc) {
-                if ($pending === []) {
-                    break;
-                }
-                $clientId = (string) ($acc['client_id'] ?? '');
-                $apiKey = (string) ($acc['api_key'] ?? '');
-                if ($clientId === '' || $apiKey === '') {
-                    continue;
-                }
-                $added += $this->refreshPreservedForCredentials($catalog, $clientId, $apiKey, $pending);
-            }
-        } else {
-            $clientId = $this->ozon->clientId();
-            $apiKey = $this->ozon->apiKey();
-            if ($clientId !== '' && $apiKey !== '') {
-                $added += $this->refreshPreservedForCredentials($catalog, $clientId, $apiKey, $pending);
-            }
-        }
-
-        if ($pending !== []) {
-            logLine(
-                'WARNING',
-                'preserve_sync: Ozon Seller API не вернул карточки по product_id (нет в кабинете или другой продавец): '
-                . implode(', ', array_keys($pending)),
-                $this->logPath
-            );
-        }
-
-        return $added;
-    }
-
-    /**
-     * @param array<string, string> $pending sku => brand_type (modified in place)
-     */
-    private function refreshPreservedForCredentials(
-        OzonCatalogApi $catalog,
-        string $clientId,
-        string $apiKey,
-        array &$pending,
-    ): int {
-        $added = 0;
-        $pendingIds = array_keys($pending);
-        foreach (array_chunk($pendingIds, 100) as $chunkRaw) {
-            /** @var list<string> $chunk */
-            $chunk = [];
-            foreach ($chunkRaw as $id) {
-                $sid = (string) $id;
-                if ($sid !== '' && isset($pending[$sid])) {
-                    $chunk[] = $sid;
-                }
-            }
-            if ($chunk === []) {
-                continue;
-            }
-            try {
-                $items = $catalog->fetchProductInfoListByProductIds($clientId, $apiKey, $chunk);
-            } catch (\Throwable) {
-                continue;
-            }
-            if ($items === []) {
-                continue;
-            }
-
-            $pidsChunk = [];
-            foreach ($items as $row) {
-                if (!is_array($row)) {
-                    continue;
-                }
-                $op = (int) ($row['id'] ?? $row['product_id'] ?? 0);
-                if ($op > 0) {
-                    $pidsChunk[] = $op;
-                }
-            }
-            $attrsByPid = [];
-            if ($pidsChunk !== []) {
-                try {
-                    $attrRows = $catalog->fetchProductInfoAttributes($clientId, $apiKey, $pidsChunk);
-                    $attrsByPid = $this->mapAttributeRowsByProductId($attrRows);
-                } catch (\Throwable) {
-                }
-            }
-            $picturesByPid = $pidsChunk !== []
-                ? $catalog->fetchProductPicturesByProductId($clientId, $apiKey, $pidsChunk)
-                : [];
-
-            foreach ($items as $item) {
-                if (!is_array($item)) {
-                    continue;
-                }
-                $productId = (int) ($item['id'] ?? $item['product_id'] ?? 0);
-                $storageSku = (string) $productId;
-                if ($productId < 1 || !isset($pending[$storageSku])) {
-                    continue;
-                }
-                $fixedBrand = $pending[$storageSku];
-                $longDesc = $productId > 0
-                    ? $catalog->fetchProductDescription($clientId, $apiKey, $productId)
-                    : '';
-                $imgUrl = OzonProductAttributes::extractPrimaryImageUrl($item);
-                $videoCtx = $this->videoContextsForProductId($attrsByPid, $productId);
-                $extraPics = $picturesByPid[$productId] ?? [];
-                $upsert = $this->mapItemToUpsert($item, $storageSku, $fixedBrand, $longDesc, $imgUrl, $videoCtx, $extraPics);
-                $upsert = $this->maybeDownloadProductImage($upsert, (string) ($upsert['image_ozon_url'] ?? ''));
-                if ($this->product->upsertFromOzon($upsert)) {
-                    ++$added;
-                }
-                unset($pending[$storageSku]);
-            }
-        }
-
-        return $added;
     }
 
     /**

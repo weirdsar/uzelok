@@ -88,6 +88,9 @@ header('Content-Type: text/html; charset=UTF-8');
                 <p class="font-mono text-sm">Статус: <span class="text-orange-400"><?= htmlspecialchars((string) $syncResult['status'], ENT_QUOTES | ENT_HTML5, 'UTF-8') ?></span></p>
                 <p class="font-mono text-sm">Обновлено: <?= (int) $syncResult['updated'] ?></p>
                 <p class="font-mono text-sm">Деактивировано: <?= (int) $syncResult['deactivated'] ?></p>
+                <?php if (isset($syncResult['active_products'])) : ?>
+                    <p class="font-mono text-sm">Активных после синка: <?= (int) $syncResult['active_products'] ?></p>
+                <?php endif; ?>
                 <?php if (($syncResult['errors'] ?? '') !== '') : ?>
                     <p class="mt-2 text-red-400 text-sm"><?= htmlspecialchars((string) $syncResult['errors'], ENT_QUOTES | ENT_HTML5, 'UTF-8') ?></p>
                 <?php endif; ?>

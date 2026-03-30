@@ -20,6 +20,7 @@ declare(strict_types=1);
  *   Запись в карте имеет приоритет над разбором id.N из имени файла.
  *
  * CLI: php8.4 scripts/sync-user-infographics.php
+ *        php8.4 scripts/sync-user-infographics.php --strict   (только SKU_* / ozon.* = products.sku)
  * После деплоя также вызывается из cron/sync.php и admin sync (после Ozon).
  */
 
@@ -45,7 +46,8 @@ $public = isset($config['paths']['public']) && is_string($config['paths']['publi
 $destDir = $public . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'user-content';
 
 $pdo = Database::getInstance($dbPath)->getConnection();
-$result = UserInfographicsSync::syncFromUserContent($pdo, $srcDir, $destDir);
+$strict = in_array('--strict', $argv, true);
+$result = UserInfographicsSync::syncFromUserContent($pdo, $srcDir, $destDir, $strict);
 
 foreach ($result['messages'] as $m) {
     echo $m . "\n";

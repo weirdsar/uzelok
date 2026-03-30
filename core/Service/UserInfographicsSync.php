@@ -13,12 +13,15 @@ use PDO;
 final class UserInfographicsSync
 {
     /**
+     * @param bool $strictSkuMatchOnly Только совпадение числа в SKU_* / ozon.* с колонкой products.sku (без карты, без id.*, без LIKE по ozon_url).
+     *
      * @return array{copied: int, db_updated: int, messages: list<string>}
      */
     public static function syncFromUserContent(
         PDO $pdo,
         string $srcDir,
         string $destDir,
+        bool $strictSkuMatchOnly = false,
     ): array {
         $messages = [];
 
@@ -30,8 +33,10 @@ final class UserInfographicsSync
             return ['copied' => 0, 'db_updated' => 0, 'messages' => ["cannot create: {$destDir}"]];
         }
 
-        $infographicMap = self::loadMap($srcDir . DIRECTORY_SEPARATOR . 'infographics.map.json');
-        if ($infographicMap !== []) {
+        $infographicMap = $strictSkuMatchOnly ? [] : self::loadMap($srcDir . DIRECTORY_SEPARATOR . 'infographics.map.json');
+        if ($strictSkuMatchOnly) {
+            $messages[] = 'strict mode: only SKU_* / ozon.* matched to products.sku; map and id.* ignored';
+        } elseif ($infographicMap !== []) {
             $messages[] = 'infographics.map.json: ' . count($infographicMap) . ' override(s)';
         }
 
@@ -59,6 +64,7 @@ final class UserInfographicsSync
                 $pdo,
                 $base,
                 $infographicMap,
+                $strictSkuMatchOnly,
                 $messages
             );
             if ($targetProductId === null) {
@@ -146,8 +152,6 @@ final class UserInfographicsSync
     }
 
     /**
-     * Ищет карточку по sku, offer_id и (для числового Ozon product id из URL) по вхождению в ozon_url.
-     *
      * @param array<string, string> $infographicMap
      * @param list<string> $messages
      */
@@ -155,9 +159,10 @@ final class UserInfographicsSync
         PDO $pdo,
         string $base,
         array $infographicMap,
+        bool $strictSkuMatchOnly,
         array &$messages,
     ): ?int {
-        if (isset($infographicMap[$base])) {
+        if (!$strictSkuMatchOnly && isset($infographicMap[$base])) {
             $k = $infographicMap[$base];
             $id = self::findProductIdByKey($pdo, $k);
             if ($id === null) {
@@ -169,13 +174,21 @@ final class UserInfographicsSync
             return $id;
         }
         if (preg_match('/^id\.(\d+)_infografika(?:_[^.]+)?\.[a-z0-9]+$/i', $base, $m) === 1) {
+            if ($strictSkuMatchOnly) {
+                $messages[] = "strict skip (id.* pattern): {$base}";
+
+                return null;
+            }
+
             return (int) $m[1];
         }
         if (preg_match('/^ozon\.(\d+)_infografika(?:_[^.]+)?\.[a-z0-9]+$/i', $base, $m) === 1) {
             $ozonId = (string) $m[1];
-            $id = self::findProductIdByKey($pdo, $ozonId);
+            $id = $strictSkuMatchOnly
+                ? self::findProductIdBySkuOnly($pdo, $ozonId)
+                : self::findProductIdByKey($pdo, $ozonId);
             if ($id === null) {
-                $messages[] = "skip (no product for Ozon id={$ozonId}): {$base}";
+                $messages[] = "skip (no product for sku={$ozonId}): {$base}";
 
                 return null;
             }
@@ -184,9 +197,11 @@ final class UserInfographicsSync
         }
         if (preg_match('/^SKU_(\d+)_infografika(?:_[^.]+)?\.[a-z0-9]+$/i', $base, $m) === 1) {
             $ozonId = (string) $m[1];
-            $id = self::findProductIdByKey($pdo, $ozonId);
+            $id = $strictSkuMatchOnly
+                ? self::findProductIdBySkuOnly($pdo, $ozonId)
+                : self::findProductIdByKey($pdo, $ozonId);
             if ($id === null) {
-                $messages[] = "skip (no product for Ozon id={$ozonId}): {$base}";
+                $messages[] = "skip (no product for sku={$ozonId}): {$base}";
 
                 return null;
             }
@@ -196,6 +211,15 @@ final class UserInfographicsSync
         $messages[] = "skip (pattern): {$base}";
 
         return null;
+    }
+
+    private static function findProductIdBySkuOnly(PDO $pdo, string $sku): ?int
+    {
+        $stmt = $pdo->prepare('SELECT id FROM products WHERE sku = :k LIMIT 1');
+        $stmt->execute([':k' => $sku]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row === false ? null : (int) $row['id'];
     }
 
     /**
