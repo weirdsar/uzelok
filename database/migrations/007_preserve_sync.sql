@@ -1,0 +1,1 @@
+ALTER TABLE products ADD COLUMN preserve_sync INTEGER NOT NULL DEFAULT 0;

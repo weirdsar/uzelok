@@ -96,10 +96,10 @@ final class Product
         $sql = <<<'SQL'
 INSERT INTO products (
     sku, offer_id, brand_type, title, description, price_ozon, ozon_url, image_local_path, image_ozon_url, gallery_json, videos_json, seo_article, user_gallery_json,
-    sort_order, is_active, updated_at
+    sort_order, is_active, preserve_sync, updated_at
 ) VALUES (
     :sku, :offer_id, :brand_type, :title, :description, :price_ozon, :ozon_url, :image_local_path, :image_ozon_url, :gallery_json, :videos_json, :seo_article, '',
-    :sort_order, 1, datetime('now')
+    :sort_order, 1, 0, datetime('now')
 )
 ON CONFLICT(sku) DO UPDATE SET
     offer_id = excluded.offer_id,
@@ -114,6 +114,7 @@ ON CONFLICT(sku) DO UPDATE SET
     videos_json = excluded.videos_json,
     seo_article = CASE WHEN excluded.seo_article != '' THEN excluded.seo_article ELSE products.seo_article END,
     user_gallery_json = products.user_gallery_json,
+    preserve_sync = products.preserve_sync,
     sort_order = CASE WHEN excluded.sort_order = 0 THEN products.sort_order ELSE excluded.sort_order END,
     is_active = 1,
     updated_at = datetime('now')
@@ -151,7 +152,7 @@ SQL;
     {
         if ($activeSKUs === []) {
             $stmt = $this->db->query(
-                "UPDATE products SET is_active = 0, updated_at = datetime('now') WHERE is_active = 1 AND sku IS NOT NULL",
+                "UPDATE products SET is_active = 0, updated_at = datetime('now') WHERE is_active = 1 AND sku IS NOT NULL AND COALESCE(preserve_sync, 0) = 0",
                 []
             );
 
@@ -168,7 +169,7 @@ SQL;
 
         $inList = implode(', ', $placeholders);
         $sql = "UPDATE products SET is_active = 0, updated_at = datetime('now')
-                WHERE is_active = 1 AND sku IS NOT NULL AND sku NOT IN ({$inList})";
+                WHERE is_active = 1 AND sku IS NOT NULL AND COALESCE(preserve_sync, 0) = 0 AND sku NOT IN ({$inList})";
 
         $stmt = $this->db->query($sql, $params);
 
