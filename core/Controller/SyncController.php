@@ -292,7 +292,7 @@ final class SyncController
             ?? ($this->skuBrandMap[$offerId] ?? $this->guessBrandFromSkuPrefix($offerId));
 
         $priceOzon = $this->extractPriceOzon($item);
-        $ozonUrl = $this->resolveOzonUrl($item, $offerId);
+        $ozonUrl = $this->resolveOzonUrl($item, $storageSku);
         $sortOrder = isset($item['sort_order']) ? (int) $item['sort_order'] : 0;
 
         $descSource = $apiDescription !== '' ? $apiDescription : (string) ($item['description'] ?? '');
@@ -417,20 +417,32 @@ final class SyncController
 
     /**
      * @param array<string, mixed> $item
+     * @param string $storageSku ключ в БД: в мульти-кабинете — Ozon product_id (цифры); в legacy — offer_id (не строим URL из «цифр» артикула).
      */
-    private function resolveOzonUrl(array $item, string $offerIdForFallback): string
+    private function resolveOzonUrl(array $item, string $storageSku): string
     {
+        $digits = static function (string $s): string {
+            $d = preg_replace('/\D+/', '', $s);
+
+            return is_string($d) ? $d : '';
+        };
+
+        $trusted = $digits($storageSku);
+        if ($trusted !== '' && strlen($trusted) >= 8 && ctype_digit($trusted)) {
+            return $this->ozon->buildOzonUrl($trusted);
+        }
+
         $direct = $item['ozon_url'] ?? null;
-        if (is_string($direct) && $direct !== '') {
+        if (is_string($direct) && $direct !== '' && str_contains($direct, 'ozon.ru')) {
             return $direct;
         }
 
         $id = $item['id'] ?? $item['product_id'] ?? null;
-        if ($id !== null && $id !== '') {
+        if ($id !== null && $id !== '' && (int) $id > 0) {
             return $this->ozon->buildOzonUrl((int) $id);
         }
 
-        return $this->ozon->buildOzonUrl($offerIdForFallback);
+        return '';
     }
 
     /**

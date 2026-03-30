@@ -12,7 +12,7 @@ $priceOzon = (int) ($productDetail['price_ozon'] ?? 0);
 $priceDirect = isset($productDetail['price_direct']) && $productDetail['price_direct'] !== null && $productDetail['price_direct'] !== ''
     ? (int) $productDetail['price_direct']
     : null;
-$ozonUrl = (string) ($productDetail['ozon_url'] ?? '#');
+$ozonUrl = \Uzelok\Core\productOzonPurchaseUrl($productDetail);
 $offerId = trim((string) ($productDetail['offer_id'] ?? ''));
 $skuRow = trim((string) ($productDetail['sku'] ?? ''));
 $category = trim((string) ($productDetail['category'] ?? ''));

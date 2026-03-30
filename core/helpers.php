@@ -20,6 +20,27 @@ function formatPrice(int $priceRub): string
 }
 
 /**
+ * Ссылка «Купить на Ozon»: из числового sku (= Ozon product_id в БД после мульти-кабинетного синка),
+ * чтобы не расходилось с колонкой ozon_url и не открывались чужие карточки из-за старых багов URL.
+ *
+ * @param array<string, mixed> $product DB row
+ */
+function productOzonPurchaseUrl(array $product): string
+{
+    $sku = trim((string) ($product['sku'] ?? ''));
+    if ($sku !== '' && ctype_digit($sku) && strlen($sku) >= 8) {
+        return 'https://www.ozon.ru/product/' . $sku . '/';
+    }
+
+    $legacy = trim((string) ($product['ozon_url'] ?? ''));
+    if ($legacy !== '' && str_starts_with($legacy, 'http')) {
+        return $legacy;
+    }
+
+    return 'https://www.ozon.ru/';
+}
+
+/**
  * URLs for product gallery: user infographics first, then Ozon API (gallery + primary), then local file.
  * Local comes after Ozon so stale demo/Picsum files under image_local_path do not hide real CDN URLs after sync.
  *
@@ -28,6 +49,18 @@ function formatPrice(int $priceRub): string
  */
 function productGalleryUrls(array $product): array
 {
+    /** Bump when replacing user_content files so browsers bypass long-lived image cache (.htaccess Expires). */
+    $userContentVer = '6';
+
+    $withUserContentBust = static function (string $u) use ($userContentVer): string {
+        if (!str_starts_with($u, '/assets/images/user-content/')) {
+            return $u;
+        }
+        $sep = str_contains($u, '?') ? '&' : '?';
+
+        return $u . $sep . 'v=' . $userContentVer;
+    };
+
     $seen = [];
     $out = [];
     $push = static function (string $u) use (&$seen, &$out): void {
@@ -48,7 +81,7 @@ function productGalleryUrls(array $product): array
                         continue;
                     }
                     if (str_starts_with($u, '/')) {
-                        $push($u);
+                        $push($withUserContentBust($u));
                     } elseif (str_starts_with($u, 'http')) {
                         $push($u);
                     }

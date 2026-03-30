@@ -6,6 +6,7 @@ require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 use Uzelok\Core\Database;
 use Uzelok\Core\Model\Product;
+use Uzelok\Core\Service\UserInfographicsSync;
 use Uzelok\Core\SyncBootstrap;
 
 /** @var array<string, mixed> $config */
@@ -46,8 +47,22 @@ try {
 }
 
 $syncResult = null;
+$infographicsResult = null;
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['run_sync'])) {
     $syncResult = $controller->sync();
+    $root = isset($config['paths']['root']) && is_string($config['paths']['root'])
+        ? $config['paths']['root']
+        : dirname(__DIR__, 2);
+    $public = isset($config['paths']['public']) && is_string($config['paths']['public'])
+        ? $config['paths']['public']
+        : $root . DIRECTORY_SEPARATOR . 'public_html';
+    $srcDir = $root . DIRECTORY_SEPARATOR . 'user_content';
+    $destDir = $public . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'user-content';
+    $infographicsResult = UserInfographicsSync::syncFromUserContent(
+        $db->getConnection(),
+        $srcDir,
+        $destDir
+    );
 }
 
 $stmt = $db->query('SELECT * FROM sync_log ORDER BY id DESC LIMIT 1', []);
@@ -75,6 +90,17 @@ header('Content-Type: text/html; charset=UTF-8');
                 <p class="font-mono text-sm">Деактивировано: <?= (int) $syncResult['deactivated'] ?></p>
                 <?php if (($syncResult['errors'] ?? '') !== '') : ?>
                     <p class="mt-2 text-red-400 text-sm"><?= htmlspecialchars((string) $syncResult['errors'], ENT_QUOTES | ENT_HTML5, 'UTF-8') ?></p>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if (is_array($infographicsResult)) : ?>
+            <div class="mb-6 rounded-lg border border-white/10 bg-white/5 p-4">
+                <h2 class="text-lg font-semibold mb-2">Инфографика (user_content → сайт)</h2>
+                <p class="font-mono text-sm">Скопировано файлов: <?= (int) $infographicsResult['copied'] ?></p>
+                <p class="font-mono text-sm">Карточек обновлено в БД: <?= (int) $infographicsResult['db_updated'] ?></p>
+                <?php if (($infographicsResult['messages'] ?? []) !== []) : ?>
+                    <pre class="mt-2 max-h-48 overflow-y-auto text-xs font-mono text-[#a0a0b8]"><?= htmlspecialchars(implode("\n", $infographicsResult['messages']), ENT_QUOTES | ENT_HTML5, 'UTF-8') ?></pre>
                 <?php endif; ?>
             </div>
         <?php endif; ?>

@@ -16,7 +16,7 @@ $imgSrc = $primaryImg['src'];
 $imgExtraAttrs = $primaryImg['ozonRemote'] ? ' referrerpolicy="no-referrer"' : '';
 
 $title = (string) ($product['title'] ?? '');
-$ozonUrl = (string) ($product['ozon_url'] ?? '#');
+$ozonUrl = \Uzelok\Core\productOzonPurchaseUrl($product);
 $pid = (int) ($product['id'] ?? 0);
 $brandType = htmlspecialchars((string) ($product['brand_type'] ?? ''), ENT_QUOTES, 'UTF-8');
 $productPageUrl = '/?page=product&id=' . $pid;
