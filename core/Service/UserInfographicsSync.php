@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Uzelok\Core\Service;
 
 use PDO;
-use PDOStatement;
 
 /**
  * Копирует user_content/* в public_html/assets/images/user-content/ и пишет products.user_gallery_json.
@@ -36,9 +35,6 @@ final class UserInfographicsSync
             $messages[] = 'infographics.map.json: ' . count($infographicMap) . ' override(s)';
         }
 
-        $resolveSku = $pdo->prepare('SELECT id FROM products WHERE sku = :sku LIMIT 1');
-        $resolveSkuOrOffer = $pdo->prepare('SELECT id FROM products WHERE sku = :k OR offer_id = :k2 LIMIT 1');
-
         /** @var array<int, list<string>> $productIdToBasenames */
         $productIdToBasenames = [];
         $files = scandir($srcDir);
@@ -60,10 +56,9 @@ final class UserInfographicsSync
             }
 
             $targetProductId = self::resolveTargetProductId(
+                $pdo,
                 $base,
                 $infographicMap,
-                $resolveSku,
-                $resolveSkuOrOffer,
                 $messages
             );
             if ($targetProductId === null) {
@@ -138,68 +133,87 @@ final class UserInfographicsSync
         }
         $out = [];
         foreach ($decoded as $fname => $key) {
-            if (is_string($fname) && is_string($key) && $fname !== '' && trim($key) !== '') {
-                $out[$fname] = trim($key);
+            if (!is_string($fname) || !is_string($key) || $fname === '' || trim($key) === '') {
+                continue;
             }
+            if (str_starts_with($fname, '_')) {
+                continue;
+            }
+            $out[$fname] = trim($key);
         }
 
         return $out;
     }
 
     /**
+     * Ищет карточку по sku, offer_id и (для числового Ozon product id из URL) по вхождению в ozon_url.
+     *
      * @param array<string, string> $infographicMap
-     * @param PDOStatement $resolveSku
-     * @param PDOStatement $resolveSkuOrOffer
      * @param list<string> $messages
      */
     private static function resolveTargetProductId(
+        PDO $pdo,
         string $base,
         array $infographicMap,
-        PDOStatement $resolveSku,
-        PDOStatement $resolveSkuOrOffer,
         array &$messages,
     ): ?int {
         if (isset($infographicMap[$base])) {
             $k = $infographicMap[$base];
-            $resolveSkuOrOffer->execute([':k' => $k, ':k2' => $k]);
-            $row = $resolveSkuOrOffer->fetch(PDO::FETCH_ASSOC);
-            if ($row === false) {
-                $messages[] = "skip map (no product sku/offer_id={$k}): {$base}";
+            $id = self::findProductIdByKey($pdo, $k);
+            if ($id === null) {
+                $messages[] = "skip map (no product for key={$k}): {$base}";
 
                 return null;
             }
 
-            return (int) $row['id'];
+            return $id;
         }
         if (preg_match('/^id\.(\d+)_infografika(?:_[^.]+)?\.[a-z0-9]+$/i', $base, $m) === 1) {
             return (int) $m[1];
         }
         if (preg_match('/^ozon\.(\d+)_infografika(?:_[^.]+)?\.[a-z0-9]+$/i', $base, $m) === 1) {
-            $sku = (string) $m[1];
-            $resolveSku->execute([':sku' => $sku]);
-            $row = $resolveSku->fetch(PDO::FETCH_ASSOC);
-            if ($row === false) {
-                $messages[] = "skip (no product sku={$sku}): {$base}";
+            $ozonId = (string) $m[1];
+            $id = self::findProductIdByKey($pdo, $ozonId);
+            if ($id === null) {
+                $messages[] = "skip (no product for Ozon id={$ozonId}): {$base}";
 
                 return null;
             }
 
-            return (int) $row['id'];
+            return $id;
         }
         if (preg_match('/^SKU_(\d+)_infografika(?:_[^.]+)?\.[a-z0-9]+$/i', $base, $m) === 1) {
-            $sku = (string) $m[1];
-            $resolveSku->execute([':sku' => $sku]);
-            $row = $resolveSku->fetch(PDO::FETCH_ASSOC);
-            if ($row === false) {
-                $messages[] = "skip (no product sku={$sku}): {$base}";
+            $ozonId = (string) $m[1];
+            $id = self::findProductIdByKey($pdo, $ozonId);
+            if ($id === null) {
+                $messages[] = "skip (no product for Ozon id={$ozonId}): {$base}";
 
                 return null;
             }
 
-            return (int) $row['id'];
+            return $id;
         }
         $messages[] = "skip (pattern): {$base}";
 
         return null;
+    }
+
+    /**
+     * Ключ из имени файла / карты: sku, offer_id или числовой id из URL ozon.ru/product/...-1234567890/.
+     */
+    private static function findProductIdByKey(PDO $pdo, string $key): ?int
+    {
+        $sql = 'SELECT id FROM products WHERE sku = :k OR offer_id = :k2';
+        $params = [':k' => $key, ':k2' => $key];
+        if (preg_match('/^\d{8,}$/', $key) === 1) {
+            $sql .= ' OR (trim(ozon_url) != \'\' AND ozon_url LIKE :likepat)';
+            $params[':likepat'] = '%' . $key . '%';
+        }
+        $sql .= ' LIMIT 1';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row === false ? null : (int) $row['id'];
     }
 }

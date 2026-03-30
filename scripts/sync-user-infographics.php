@@ -11,7 +11,9 @@ declare(strict_types=1);
  *   id.{id}_infografika_01.ext … — порядок по имени файла
  *   ozon.{ozon_product_id}_infografika.ext — по products.sku (= Ozon product_id), предпочтительно
  *   ozon.{id}_infografika_01.ext … — то же + порядок слайдов
- *   SKU_{ozon_product_id}_infografika.ext — то же, что ozon.* (удобное имя после экспорта)
+ *   SKU_{ozon_product_id}_infografika.ext — число из ссылки Ozon: .../product/...-{id}/ (тот же id в имени файла).
+ *
+ * Сопоставление с БД: sku, offer_id или вхождение числового id в ozon_url (если в sku хранится не product_id).
  *
  * Переопределение (если id.* «уехали» на другие карточки): user_content/infographics.map.json
  *   { "id.25_infografika.png": "1549149172" }  — значение = products.sku или products.offer_id
