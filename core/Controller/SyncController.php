@@ -211,6 +211,15 @@ final class SyncController
             }
         }
 
+        if ($pending !== []) {
+            logLine(
+                'WARNING',
+                'preserve_sync: Ozon Seller API не вернул карточки по product_id (нет в кабинете или другой продавец): '
+                . implode(', ', array_keys($pending)),
+                $this->logPath
+            );
+        }
+
         return $added;
     }
 
@@ -599,16 +608,28 @@ final class SyncController
      */
     private function extractPriceOzon(array $item): int
     {
-        $raw = $item['marketing_seller_price']
-            ?? $item['marketing_price']
-            ?? $item['price']
-            ?? $item['old_price']
-            ?? 0;
-        if (is_array($raw)) {
-            $raw = $raw['price'] ?? $raw['value'] ?? $raw['marketing_seller_price'] ?? 0;
+        $candidates = [
+            $item['marketing_seller_price'] ?? null,
+            $item['marketing_price'] ?? null,
+            is_array($item['price'] ?? null)
+                ? (($item['price']['price'] ?? $item['price']['marketing_seller_price'] ?? $item['price']['marketing_price'] ?? null))
+                : ($item['price'] ?? null),
+            $item['old_price'] ?? null,
+        ];
+        foreach ($candidates as $raw) {
+            if ($raw === null || $raw === '' || $raw === []) {
+                continue;
+            }
+            if (is_array($raw)) {
+                $raw = $raw['price'] ?? $raw['value'] ?? $raw['marketing_seller_price'] ?? $raw['marketing_price'] ?? 0;
+            }
+            $s = preg_replace('/[^\d.]/', '', (string) $raw) ?? '0';
+            $v = (int) round((float) $s);
+            if ($v > 0) {
+                return $v;
+            }
         }
-        $s = preg_replace('/[^\d.]/', '', (string) $raw) ?? '0';
 
-        return (int) round((float) $s);
+        return 0;
     }
 }

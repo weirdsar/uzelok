@@ -102,8 +102,9 @@ final class OzonCatalogApi
             return [];
         }
 
+        $ids = array_map(static fn (string $s): int => (int) $s, array_values($clean));
         $decoded = $this->post($clientId, $apiKey, '/v3/product/info/list', [
-            'product_id' => array_values($clean),
+            'product_id' => $ids,
         ]);
         $items = $decoded['result']['items'] ?? $decoded['items'] ?? null;
 
