@@ -279,4 +279,44 @@ final class OzonProductAttributes
             self::walkForVideoUrls($v, $push, $depth + 1, $maxDepth);
         }
     }
+
+    /**
+     * Публичный ID карточки на Ozon (фрагмент URL /product/…). В ответах Seller API он в `product_id`;
+     * поле `id` иногда — другой внутренний идентификатор, его нельзя подставлять в ссылку на карточку.
+     */
+    public static function marketplaceProductIdFromItem(array $item): int
+    {
+        $byPid = (int) ($item['product_id'] ?? 0);
+        if ($byPid > 0) {
+            return $byPid;
+        }
+
+        return (int) ($item['id'] ?? 0);
+    }
+
+    /**
+     * Для строк attributes и вложенного `product_info`.
+     */
+    public static function marketplaceProductIdFromRow(array $row): int
+    {
+        $byPid = (int) ($row['product_id'] ?? 0);
+        if ($byPid > 0) {
+            return $byPid;
+        }
+        $byId = (int) ($row['id'] ?? 0);
+        if ($byId > 0) {
+            return $byId;
+        }
+        if (isset($row['product_info']) && is_array($row['product_info'])) {
+            $pi = $row['product_info'];
+            $nested = (int) ($pi['product_id'] ?? 0);
+            if ($nested > 0) {
+                return $nested;
+            }
+
+            return (int) ($pi['id'] ?? 0);
+        }
+
+        return 0;
+    }
 }

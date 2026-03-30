@@ -76,7 +76,7 @@ final class SyncController
                         continue;
                     }
                     $activeSkus[] = $sku;
-                    $pid = (int) ($item['id'] ?? $item['product_id'] ?? 0);
+                    $pid = OzonProductAttributes::marketplaceProductIdFromItem($item);
                     $longDesc = $this->ozon->fetchProductDescription($pid);
                     $imgUrl = OzonProductAttributes::extractPrimaryImageUrl($item);
                     $videoCtx = $this->videoContextsForProductId($attrsByPid, $pid);
@@ -186,7 +186,7 @@ final class SyncController
                         if (!is_array($row)) {
                             continue;
                         }
-                        $op = (int) ($row['id'] ?? $row['product_id'] ?? 0);
+                        $op = OzonProductAttributes::marketplaceProductIdFromRow($row);
                         if ($op > 0) {
                             $pidsChunk[] = $op;
                         }
@@ -215,7 +215,7 @@ final class SyncController
                         if ($offerId === '') {
                             continue;
                         }
-                        $productId = (int) ($item['id'] ?? $item['product_id'] ?? 0);
+                        $productId = OzonProductAttributes::marketplaceProductIdFromItem($item);
                         $storageSku = $productId > 0
                             ? (string) $productId
                             : $brand . '|' . $offerId;
@@ -348,7 +348,7 @@ final class SyncController
             if (!is_array($row)) {
                 continue;
             }
-            $p = (int) ($row['id'] ?? $row['product_id'] ?? 0);
+            $p = OzonProductAttributes::marketplaceProductIdFromItem($row);
             if ($p > 0) {
                 $pids[] = $p;
             }
@@ -380,11 +380,7 @@ final class SyncController
             if (!is_array($row)) {
                 continue;
             }
-            $pid = (int) ($row['id'] ?? $row['product_id'] ?? 0);
-            if ($pid < 1 && isset($row['product_info']) && is_array($row['product_info'])) {
-                $pi = $row['product_info'];
-                $pid = (int) ($pi['id'] ?? $pi['product_id'] ?? 0);
-            }
+            $pid = OzonProductAttributes::marketplaceProductIdFromRow($row);
             if ($pid > 0) {
                 $map[$pid] = $row;
             }
@@ -440,9 +436,9 @@ final class SyncController
             return $direct;
         }
 
-        $id = $item['id'] ?? $item['product_id'] ?? null;
-        if ($id !== null && $id !== '' && (int) $id > 0) {
-            return $this->ozon->buildOzonUrl((int) $id);
+        $idFromItem = OzonProductAttributes::marketplaceProductIdFromItem($item);
+        if ($idFromItem > 0) {
+            return $this->ozon->buildOzonUrl($idFromItem);
         }
 
         return '';

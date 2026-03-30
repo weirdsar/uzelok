@@ -20,8 +20,8 @@ function formatPrice(int $priceRub): string
 }
 
 /**
- * Ссылка «Купить на Ozon»: из числового sku (= Ozon product_id в БД после мульти-кабинетного синка),
- * чтобы не расходилось с колонкой ozon_url и не открывались чужие карточки из-за старых багов URL.
+ * Ссылка «Купить на Ozon»: числовой sku = публичный product_id из API (см. OzonProductAttributes::marketplaceProductIdFromItem).
+ * Fallback — ozon_url без query (utm/at), чтобы не тащить чужие карточки из устаревших данных.
  *
  * @param array<string, mixed> $product DB row
  */
@@ -34,6 +34,13 @@ function productOzonPurchaseUrl(array $product): string
 
     $legacy = trim((string) ($product['ozon_url'] ?? ''));
     if ($legacy !== '' && str_starts_with($legacy, 'http')) {
+        if (str_contains($legacy, 'ozon.ru')) {
+            $clean = preg_replace('/[?#].*$/', '', $legacy);
+            if (is_string($clean) && $clean !== '') {
+                return $clean;
+            }
+        }
+
         return $legacy;
     }
 
