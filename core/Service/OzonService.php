@@ -37,6 +37,44 @@ final class OzonService
     }
 
     /**
+     * @param list<int|string> $productIds Ozon product_id
+     * @return list<array<string, mixed>>
+     */
+    public function fetchProductInfoListByProductIds(array $productIds): array
+    {
+        if ($this->usesPlaceholderCredentials()) {
+            return [];
+        }
+        $clean = [];
+        foreach ($productIds as $pid) {
+            $p = (int) $pid;
+            if ($p > 0) {
+                $clean[(string) $p] = (string) $p;
+            }
+        }
+        if ($clean === []) {
+            return [];
+        }
+
+        $decoded = $this->sendRequest('/v3/product/info/list', [
+            'product_id' => array_values($clean),
+        ]);
+        $items = $decoded['result']['items'] ?? $decoded['items'] ?? null;
+
+        return is_array($items) ? $items : [];
+    }
+
+    public function clientId(): string
+    {
+        return $this->clientId;
+    }
+
+    public function apiKey(): string
+    {
+        return $this->apiKey;
+    }
+
+    /**
      * Product attributes (POST /v3/product/info/attributes) — may carry video URLs in values / rich JSON.
      *
      * @param list<int> $productIds

@@ -84,6 +84,33 @@ final class OzonCatalogApi
     }
 
     /**
+     * Карточки по Ozon product_id (число из ссылки и поля sku в мульти-кабинетном режиме).
+     *
+     * @param list<int|string> $productIds
+     * @return list<array<string, mixed>>
+     */
+    public function fetchProductInfoListByProductIds(string $clientId, string $apiKey, array $productIds): array
+    {
+        $clean = [];
+        foreach ($productIds as $pid) {
+            $p = (int) $pid;
+            if ($p > 0) {
+                $clean[(string) $p] = (string) $p;
+            }
+        }
+        if ($clean === []) {
+            return [];
+        }
+
+        $decoded = $this->post($clientId, $apiKey, '/v3/product/info/list', [
+            'product_id' => array_values($clean),
+        ]);
+        $items = $decoded['result']['items'] ?? $decoded['items'] ?? null;
+
+        return is_array($items) ? $items : [];
+    }
+
+    /**
      * Rich attributes per product (may include video URLs not present in /v3/product/info/list).
      *
      * @param list<int> $productIds Ozon product_id values
