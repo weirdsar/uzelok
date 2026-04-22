@@ -46,7 +46,7 @@ if (!is_array($stores)) {
             </div>
         </div>
         <div class="mt-10 border-t border-[#2a2a3e] pt-6 text-center text-xs text-[#6b6b80]">
-            Сделано с 🧡 для uzelok64.ru
+            Сделано с 🧡 для uzelok64.ru — <a href="https://sii5.ru" class="text-[#a0a0b8] underline decoration-[#2a2a3e] underline-offset-2 transition hover:text-[#f97316] hover:decoration-[#f97316]/50" target="_blank" rel="noopener noreferrer">sii5.ru</a>
         </div>
     </div>
 </footer>
