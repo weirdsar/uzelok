@@ -27,29 +27,31 @@ $ariaProduct = 'Подробнее: ' . $title;
     data-brand="<?= $brandType ?>"
     data-product-id="<?= $pid ?>"
 >
+    <div class="relative aspect-[4/3] shrink-0 overflow-hidden bg-[#12121a]">
+        <div class="card-image h-full w-full overflow-hidden">
+            <?php if ($imgSrc !== '') : ?>
+                <img
+                    src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>"
+                    alt="<?= htmlspecialchars('Увеличить фото: ' . $title, ENT_QUOTES, 'UTF-8') ?>"
+                    class="h-full w-full cursor-zoom-in object-cover object-center transition duration-300 group-hover:scale-[1.02]"
+                    loading="lazy"
+                    decoding="async"
+                    tabindex="0"
+                    role="button"<?= $imgExtraAttrs ?>
+                >
+            <?php else : ?>
+                <div class="flex h-full w-full items-center justify-center bg-[#1a1a2e] text-[#6b6b80]">
+                    <svg class="h-16 w-16 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </div>
+            <?php endif; ?>
+        </div>
+        <span class="pointer-events-none absolute left-2 top-2 rounded-md px-2 py-1 text-xs font-semibold text-white shadow" style="background-color: <?= htmlspecialchars($brandColor, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($brandLabel, ENT_QUOTES, 'UTF-8') ?></span>
+    </div>
     <a
         href="<?= htmlspecialchars($productPageUrl, ENT_QUOTES, 'UTF-8') ?>"
-        class="flex flex-1 flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0f]"
+        class="flex min-h-0 flex-1 flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#f97316]"
         aria-label="<?= htmlspecialchars($ariaProduct, ENT_QUOTES, 'UTF-8') ?>"
     >
-        <div class="relative aspect-[4/3] overflow-hidden bg-[#12121a]">
-            <div class="card-image h-full w-full overflow-hidden">
-                <?php if ($imgSrc !== '') : ?>
-                    <img
-                        src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>"
-                        alt=""
-                        class="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.02]"
-                        loading="lazy"
-                        decoding="async"<?= $imgExtraAttrs ?>
-                    >
-                <?php else : ?>
-                    <div class="flex h-full w-full items-center justify-center bg-[#1a1a2e] text-[#6b6b80]">
-                        <svg class="h-16 w-16 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    </div>
-                <?php endif; ?>
-            </div>
-            <span class="pointer-events-none absolute left-2 top-2 rounded-md px-2 py-1 text-xs font-semibold text-white shadow" style="background-color: <?= htmlspecialchars($brandColor, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($brandLabel, ENT_QUOTES, 'UTF-8') ?></span>
-        </div>
         <div class="flex flex-1 flex-col p-4">
             <h3 class="line-clamp-2 text-base font-semibold leading-snug text-white group-hover:text-[#f97316]"><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h3>
             <?php
@@ -59,7 +61,7 @@ $ariaProduct = 'Подробнее: ' . $title;
                 <p class="mt-2 line-clamp-3 text-sm leading-relaxed text-[#a0a0b8]"><?= htmlspecialchars($descShow, ENT_QUOTES, 'UTF-8') ?></p>
             <?php endif; ?>
             <div class="mt-3 font-mono text-xl font-bold text-[#f97316]"><?= htmlspecialchars(\Uzelok\Core\formatPrice($priceOzon), ENT_QUOTES, 'UTF-8') ?></div>
-            <p class="text-xs text-[#6b6b80]">цена на Ozon · нажмите для подробностей</p>
+            <p class="text-xs text-[#6b6b80]">цена на Ozon · нажмите ниже для подробностей</p>
             <?php if ($priceDirect !== null && $priceDirect > 0 && $priceDirect < $priceOzon) : ?>
                 <p class="mt-1 text-sm font-semibold text-emerald-500">Наша цена: <?= htmlspecialchars(\Uzelok\Core\formatPrice($priceDirect), ENT_QUOTES, 'UTF-8') ?></p>
             <?php endif; ?>

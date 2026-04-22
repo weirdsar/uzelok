@@ -136,7 +136,7 @@
             '.uz-lightbox{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.92);opacity:0;transition:opacity .2s ease;padding:12px;box-sizing:border-box}' +
             '.uz-lightbox.uz-lightbox-open{opacity:1}' +
             '.uz-lightbox__backdrop{position:absolute;inset:0;cursor:zoom-out}' +
-            '.uz-lightbox__img{position:relative;z-index:1;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;pointer-events:none;user-select:none}' +
+            '.uz-lightbox__img{position:relative;z-index:1;box-sizing:border-box;max-width:min(96vw,100%);max-height:92vh;max-height:92dvh;width:auto;height:auto;object-fit:contain;pointer-events:none;user-select:none}' +
             '.uz-lightbox__close{position:absolute;top:12px;right:12px;z-index:2;width:44px;height:44px;border:none;border-radius:10px;background:rgba(30,30,46,.95);color:#e8e8f0;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.4)}' +
             '.uz-lightbox__close:hover{background:#f97316;color:#fff}' +
             '.uz-lightbox__nav{position:absolute;top:50%;z-index:2;transform:translateY(-50%);width:48px;height:48px;border:none;border-radius:10px;background:rgba(30,30,46,.95);color:#e8e8f0;font-size:22px;cursor:pointer}' +
@@ -365,40 +365,61 @@
         }
 
         slides.forEach(function (sl) {
-            sl.style.cursor = 'zoom-in';
+            var im0 = sl.querySelector('img');
+            if (im0 && im0.src) {
+                sl.style.cursor = 'zoom-in';
+            }
         });
         strip.addEventListener('click', function (e) {
-            var t = e.target;
-            if (!t || t.tagName !== 'IMG') {
+            var slide = e.target && e.target.closest ? e.target.closest('.product-gallery-slide') : null;
+            if (!slide || !strip.contains(slide)) {
                 return;
             }
-            var slide = t.closest('.product-gallery-slide');
-            if (!slide || !strip.contains(slide)) {
+            var photoImg = slide.querySelector(':scope > img');
+            if (!photoImg || !photoImg.src) {
                 return;
             }
             e.preventDefault();
             var list = [];
             slides.forEach(function (fig) {
-                var im = fig.querySelector('img');
+                var im = fig.querySelector(':scope > img');
                 if (im && im.src) {
                     list.push({ src: im.src, alt: im.getAttribute('alt') || '' });
                 }
             });
-            var si = Array.prototype.indexOf.call(slides, slide);
-            openImageLightbox(list, si >= 0 ? si : 0);
+            if (!list.length) {
+                return;
+            }
+            var photoSlides = [];
+            slides.forEach(function (fig) {
+                var im = fig.querySelector(':scope > img');
+                if (im && im.src) {
+                    photoSlides.push(fig);
+                }
+            });
+            var idxInPhotos = photoSlides.indexOf(slide);
+            openImageLightbox(list, idxInPhotos >= 0 ? idxInPhotos : 0);
         });
     }
 
     function initCatalogCardImageZoom() {
         document.querySelectorAll('.product-card .card-image img').forEach(function (im) {
             im.style.cursor = 'zoom-in';
-            im.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
+            function openCardPhoto(e) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
                 if (!im.src) {
                     return;
                 }
                 openImageLightbox([{ src: im.src, alt: im.getAttribute('alt') || '' }], 0);
+            }
+            im.addEventListener('click', openCardPhoto);
+            im.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    openCardPhoto(e);
+                }
             });
         });
     }
