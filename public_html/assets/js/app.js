@@ -126,6 +126,22 @@
         }, 3500);
     }
 
+    /**
+     * Ozon CDN: крупный пресет, если в пути есть /wcNNN/ (иначе оставляем как есть).
+     */
+    function preferLargeProductImageUrl(src) {
+        if (typeof src !== 'string' || !/^https?:/i.test(src)) {
+            return src;
+        }
+        if (!/ozon\.ru|ozone\.ru/i.test(src)) {
+            return src;
+        }
+        if (/\/wc\d{2,4}\//i.test(src)) {
+            return src.replace(/\/wc\d{2,4}\//i, '/wc1200/');
+        }
+        return src;
+    }
+
     function ensureLightboxStyles() {
         if (document.getElementById('uz-lightbox-styles')) {
             return;
@@ -136,7 +152,7 @@
             '.uz-lightbox{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.92);opacity:0;transition:opacity .2s ease;padding:12px;box-sizing:border-box}' +
             '.uz-lightbox.uz-lightbox-open{opacity:1}' +
             '.uz-lightbox__backdrop{position:absolute;inset:0;cursor:zoom-out}' +
-            '.uz-lightbox__img{position:relative;z-index:1;box-sizing:border-box;max-width:min(96vw,100%);max-height:92vh;max-height:92dvh;width:auto;height:auto;object-fit:contain;pointer-events:none;user-select:none}' +
+            '.uz-lightbox__img{position:relative;z-index:1;box-sizing:border-box;max-width:none;max-height:none;object-fit:contain;pointer-events:none;user-select:none;image-rendering:auto}' +
             '.uz-lightbox__close{position:absolute;top:12px;right:12px;z-index:2;width:44px;height:44px;border:none;border-radius:10px;background:rgba(30,30,46,.95);color:#e8e8f0;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.4)}' +
             '.uz-lightbox__close:hover{background:#f97316;color:#fff}' +
             '.uz-lightbox__nav{position:absolute;top:50%;z-index:2;transform:translateY(-50%);width:48px;height:48px;border:none;border-radius:10px;background:rgba(30,30,46,.95);color:#e8e8f0;font-size:22px;cursor:pointer}' +
@@ -194,17 +210,87 @@
                 ? 'Стрелки \u2190 \u2192 или свайп — другие фото, Esc — закрыть'
                 : 'Esc или клик по фону — закрыть';
 
+        var onWinResize = null;
+        var curLoadToken = 0;
+        function fitLightboxImage() {
+            var nw = img.naturalWidth;
+            var nh = img.naturalHeight;
+            if (!nw || !nh) {
+                return;
+            }
+            var maxW = Math.max(0, window.innerWidth * 0.96 - 32);
+            var maxH = Math.max(0, window.innerHeight * 0.92 - 32);
+            var s = Math.min(maxW / nw, maxH / nh);
+            if (!isFinite(s) || s <= 0) {
+                s = 1;
+            }
+            var w = Math.max(1, Math.floor(nw * s));
+            var h = Math.max(1, Math.floor(nh * s));
+            img.style.width = w + 'px';
+            img.style.height = h + 'px';
+        }
+
         function render() {
             var cur = sources[idx];
-            img.src = cur.src;
+            var trySrc = preferLargeProductImageUrl(cur.src);
+            var origSrc = cur.src;
+            img.removeAttribute('width');
+            img.removeAttribute('height');
+            img.style.width = '';
+            img.style.height = '';
             img.alt = cur.alt || '';
             var multi = sources.length > 1;
             prevBtn.style.display = multi ? '' : 'none';
             nextBtn.style.display = multi ? '' : 'none';
             hint.style.display = multi ? '' : 'none';
+            var token = ++curLoadToken;
+            if (trySrc !== origSrc) {
+                img.onerror = function () {
+                    if (img.src === origSrc) {
+                        return;
+                    }
+                    img.onerror = null;
+                    img.src = origSrc;
+                    img.addEventListener(
+                        'load',
+                        function onFallback() {
+                            if (token !== curLoadToken) {
+                                return;
+                            }
+                            fitLightboxImage();
+                        },
+                        { once: true }
+                    );
+                    if (img.complete && img.naturalWidth) {
+                        if (token === curLoadToken) {
+                            fitLightboxImage();
+                        }
+                    }
+                };
+            } else {
+                img.onerror = null;
+            }
+            img.src = trySrc;
+            function afterLoad() {
+                if (token !== curLoadToken) {
+                    return;
+                }
+                fitLightboxImage();
+            }
+            if (img.complete && img.naturalWidth) {
+                afterLoad();
+            } else {
+                img.addEventListener('load', afterLoad, { once: true });
+            }
         }
 
         function closeLb() {
+            if (onWinResize) {
+                window.removeEventListener('resize', onWinResize);
+                onWinResize = null;
+            }
+            curLoadToken += 1;
+            img.onerror = null;
             overlay.classList.remove('uz-lightbox-open');
             setTimeout(function () {
                 if (overlay.parentNode) {
@@ -279,6 +365,10 @@
         overlay.appendChild(hint);
         document.body.appendChild(overlay);
         document.body.style.overflow = 'hidden';
+        onWinResize = function () {
+            fitLightboxImage();
+        };
+        window.addEventListener('resize', onWinResize, { passive: true });
         render();
         document.addEventListener('keydown', onKey);
         requestAnimationFrame(function () {
@@ -402,25 +492,44 @@
         });
     }
 
+    var catalogCardZoomInit = false;
     function initCatalogCardImageZoom() {
-        document.querySelectorAll('.product-card .card-image img').forEach(function (im) {
-            im.style.cursor = 'zoom-in';
-            function openCardPhoto(e) {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                if (!im.src) {
+        if (catalogCardZoomInit) {
+            return;
+        }
+        catalogCardZoomInit = true;
+        /* capture: срабатывает раньше других обработчиков */
+        document.addEventListener(
+            'click',
+            function (e) {
+                var t = e.target;
+                if (!t || !t.closest) {
                     return;
                 }
-                openImageLightbox([{ src: im.src, alt: im.getAttribute('alt') || '' }], 0);
-            }
-            im.addEventListener('click', openCardPhoto);
-            im.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    openCardPhoto(e);
+                var im = t.closest('.product-card .card-image img');
+                if (!im || !im.src) {
+                    return;
                 }
-            });
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                openImageLightbox([{ src: im.src, alt: im.getAttribute('alt') || '' }], 0);
+            },
+            true
+        );
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter' && e.key !== ' ') {
+                return;
+            }
+            var t = e.target;
+            if (!t || !t.matches) {
+                return;
+            }
+            if (!t.matches('.product-card .card-image img') || !t.src) {
+                return;
+            }
+            e.preventDefault();
+            openImageLightbox([{ src: t.src, alt: t.getAttribute('alt') || '' }], 0);
         });
     }
 

@@ -14,6 +14,8 @@ $baseUrl = rtrim((string) ($config['app_url'] ?? 'https://uzelok64.ru'), '/');
 $appUrl = htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8');
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 $fullUrl = htmlspecialchars($baseUrl . $requestUri, ENT_QUOTES, 'UTF-8');
+$appJsPath = __DIR__ . '/../public_html/assets/js/app.js';
+$appJsV = (is_file($appJsPath) ? (int) @filemtime($appJsPath) : 0) ?: 1;
 $desc = (string) ($pageDescription ?? '');
 $ogDesc = htmlspecialchars($desc !== '' ? $desc : 'БАТЯ • БУЙ • ВОЛНА — хозтовары, автоаксессуары, снаряжение для туризма. Прямые цены с uzelok64.ru', ENT_QUOTES, 'UTF-8');
 $ogTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
@@ -99,6 +101,6 @@ $ogTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
     </main>
     <?php require __DIR__ . '/footer.php'; ?>
     <?php require __DIR__ . '/components/order-modal.php'; ?>
-    <script src="/assets/js/app.js" defer></script>
+    <script src="/assets/js/app.js?v=<?= (int) $appJsV ?>" defer></script>
 </body>
 </html>
