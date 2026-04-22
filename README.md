@@ -78,6 +78,10 @@ php scripts/download-images.php --demo
 2. Заполнить API-ключи Ozon, токен Telegram, email
 3. Запустить `php database/init.php`
 
+### Яндекс.Метрика (счётчик 108717789)
+
+Счётчик подключается в `templates/layout.php`; цели и фильтры настраиваются через Management API — см. **`scripts/metrica/README.md`**. Локально: скопируйте OAuth-переменные в `scripts/metrica/.env` (файл в `.gitignore`, не коммитить), затем `python3 uzelok64_counter_setup.py --apply`.
+
 ## Деплой
 
 Push в `main` → GitHub Actions → sFTP на Beget.

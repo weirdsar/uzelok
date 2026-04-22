@@ -85,6 +85,7 @@ $ogTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
     </script>
     <noscript><div><img src="https://mc.yandex.ru/watch/<?= $ymId ?>" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
     <!-- /Yandex.Metrika counter -->
+    <script>window.__UZEL_YM_ID__ = <?= (int) $ymId ?>;</script>
     <?php endif; ?>
 </head>
 <body class="bg-[#0a0a0f] text-[#e8e8f0] font-sans antialiased industrial-grid min-h-screen">

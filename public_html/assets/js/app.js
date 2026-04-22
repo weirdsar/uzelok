@@ -43,6 +43,20 @@
         // #toast-container is in layout; hook reserved for future
     }
 
+    function ymReachGoal(goalName) {
+        var id = typeof window.__UZEL_YM_ID__ !== 'undefined' ? window.__UZEL_YM_ID__ : 0;
+        if (!id || !goalName) {
+            return;
+        }
+        try {
+            if (typeof window.ym === 'function') {
+                window.ym(id, 'reachGoal', goalName);
+            }
+        } catch (err) {
+            /* ignore */
+        }
+    }
+
     function initScrollProgress() {
         var fill = document.getElementById('scroll-progress-fill');
         if (!fill) {
@@ -447,6 +461,9 @@
             btn.addEventListener('mouseleave', function () {
                 btn.textContent = originalText;
             });
+            btn.addEventListener('click', function () {
+                ymReachGoal('ozon_outbound_click');
+            });
         });
     }
 
@@ -602,6 +619,7 @@
                 postForm(modalForm, orderFormError).then(function (res) {
                     var d = res.data;
                     if (d.success) {
+                        ymReachGoal('order_sent');
                         closeOrderModal();
                         showToast(
                             'Заявка отправлена! Мы свяжемся с вами в ближайшее время.',
@@ -648,6 +666,7 @@
                         btn.textContent = prevText || 'Отправить';
                     }
                     if (d.success) {
+                        ymReachGoal('order_sent');
                         showToast(
                             'Заявка отправлена! Мы свяжемся с вами в ближайшее время.',
                             'success',
