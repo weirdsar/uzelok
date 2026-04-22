@@ -67,6 +67,25 @@ $ogTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
         .fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
     </style>
+    <?php
+    /** Счётчик по умолчанию — как в metrika.md (108717789). В config.php можно задать yandex_metrika_id или 0, чтобы отключить. */
+    $ymId = (int) ($config['yandex_metrika_id'] ?? 108717789);
+    if ($ymId > 0) :
+        ?>
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+        (function(m,e,t,r,i,k,a){
+            m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+            m[i].l=1*new Date();
+            for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+        })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=<?= $ymId ?>', 'ym');
+
+        ym(<?= $ymId ?>, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/<?= $ymId ?>" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
+    <?php endif; ?>
 </head>
 <body class="bg-[#0a0a0f] text-[#e8e8f0] font-sans antialiased industrial-grid min-h-screen">
     <div class="scroll-progress-track" aria-hidden="true">

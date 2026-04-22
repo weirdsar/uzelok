@@ -39,9 +39,9 @@ if (!is_array($stores)) {
             <div>
                 <h3 class="text-sm font-semibold uppercase tracking-wider text-[#e8e8f0]">Контакты</h3>
                 <ul class="mt-4 space-y-2 text-sm text-[#a0a0b8]">
-                    <li>Саратовская обл., п. Солнечный</li>
-                    <li><a href="tel:+79000000000" class="hover:text-[#f97316]">+7 (900) 000-00-00</a></li>
-                    <li><a href="mailto:info@uzelok64.ru" class="hover:text-[#f97316]">info@uzelok64.ru</a></li>
+                    <li>г. Саратов, ул. Киселёва, д. 18Б</li>
+                    <li><a href="tel:+79297700084" class="hover:text-[#f97316]">+7 (929) 770-00-84</a></li>
+                    <li><a href="mailto:ananev-dm@mail.ru" class="hover:text-[#f97316]">ananev-dm@mail.ru</a></li>
                 </ul>
             </div>
         </div>

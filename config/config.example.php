@@ -8,6 +8,8 @@ declare(strict_types=1);
 return [
     'app_name' => 'УЗЕЛОК64',
     'app_url' => 'https://uzelok64.ru',
+    /** ID счётчика Яндекс Метрики (metrika.yandex.ru). 0 — не подключать. */
+    'yandex_metrika_id' => 108717789,
     'debug' => false,
     'paths' => [
         'root' => dirname(__DIR__),
@@ -87,7 +89,7 @@ return [
         'base_url' => 'https://api.telegram.org',
     ],
     'email' => [
-        'to' => 'owner@uzelok64.ru',
+        'to' => 'ananev-dm@mail.ru',
         'from' => 'noreply@uzelok64.ru',
         'from_name' => 'УЗЕЛОК64 — Заявка с сайта',
     ],

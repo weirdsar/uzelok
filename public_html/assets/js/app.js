@@ -112,6 +112,166 @@
         }, 3500);
     }
 
+    function ensureLightboxStyles() {
+        if (document.getElementById('uz-lightbox-styles')) {
+            return;
+        }
+        var s = document.createElement('style');
+        s.id = 'uz-lightbox-styles';
+        s.textContent =
+            '.uz-lightbox{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.92);opacity:0;transition:opacity .2s ease;padding:12px;box-sizing:border-box}' +
+            '.uz-lightbox.uz-lightbox-open{opacity:1}' +
+            '.uz-lightbox__backdrop{position:absolute;inset:0;cursor:zoom-out}' +
+            '.uz-lightbox__img{position:relative;z-index:1;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;pointer-events:none;user-select:none}' +
+            '.uz-lightbox__close{position:absolute;top:12px;right:12px;z-index:2;width:44px;height:44px;border:none;border-radius:10px;background:rgba(30,30,46,.95);color:#e8e8f0;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.4)}' +
+            '.uz-lightbox__close:hover{background:#f97316;color:#fff}' +
+            '.uz-lightbox__nav{position:absolute;top:50%;z-index:2;transform:translateY(-50%);width:48px;height:48px;border:none;border-radius:10px;background:rgba(30,30,46,.95);color:#e8e8f0;font-size:22px;cursor:pointer}' +
+            '.uz-lightbox__nav:hover{background:#f97316;color:#fff}' +
+            '.uz-lightbox__nav--prev{left:8px}' +
+            '.uz-lightbox__nav--next{right:8px}' +
+            '.uz-lightbox__hint{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:2;font-size:12px;color:#a0a0b8;pointer-events:none;text-align:center;max-width:90%}';
+        document.head.appendChild(s);
+    }
+
+    function openImageLightbox(sources, startIndex) {
+        if (!sources || !sources.length) {
+            return;
+        }
+        ensureLightboxStyles();
+        var idx = Math.min(Math.max(0, startIndex), sources.length - 1);
+        var overlay = document.createElement('div');
+        overlay.className = 'uz-lightbox';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', 'Просмотр фото');
+
+        var backdrop = document.createElement('button');
+        backdrop.type = 'button';
+        backdrop.className = 'uz-lightbox__backdrop';
+        backdrop.setAttribute('aria-label', 'Закрыть');
+
+        var img = document.createElement('img');
+        img.className = 'uz-lightbox__img';
+        img.decoding = 'async';
+        img.draggable = false;
+
+        var closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'uz-lightbox__close';
+        closeBtn.setAttribute('aria-label', 'Закрыть');
+        closeBtn.innerHTML = '&times;';
+
+        var prevBtn = document.createElement('button');
+        prevBtn.type = 'button';
+        prevBtn.className = 'uz-lightbox__nav uz-lightbox__nav--prev';
+        prevBtn.setAttribute('aria-label', 'Предыдущее фото');
+        prevBtn.textContent = '\u2039';
+
+        var nextBtn = document.createElement('button');
+        nextBtn.type = 'button';
+        nextBtn.className = 'uz-lightbox__nav uz-lightbox__nav--next';
+        nextBtn.setAttribute('aria-label', 'Следующее фото');
+        nextBtn.textContent = '\u203a';
+
+        var hint = document.createElement('div');
+        hint.className = 'uz-lightbox__hint';
+        hint.textContent =
+            sources.length > 1
+                ? 'Стрелки \u2190 \u2192 или свайп — другие фото, Esc — закрыть'
+                : 'Esc или клик по фону — закрыть';
+
+        function render() {
+            var cur = sources[idx];
+            img.src = cur.src;
+            img.alt = cur.alt || '';
+            var multi = sources.length > 1;
+            prevBtn.style.display = multi ? '' : 'none';
+            nextBtn.style.display = multi ? '' : 'none';
+            hint.style.display = multi ? '' : 'none';
+        }
+
+        function closeLb() {
+            overlay.classList.remove('uz-lightbox-open');
+            setTimeout(function () {
+                if (overlay.parentNode) {
+                    overlay.parentNode.removeChild(overlay);
+                }
+                document.body.style.overflow = '';
+                document.removeEventListener('keydown', onKey);
+            }, 220);
+        }
+
+        function step(delta) {
+            idx = (idx + delta + sources.length) % sources.length;
+            render();
+        }
+
+        function onKey(e) {
+            if (e.key === 'Escape') {
+                closeLb();
+            } else if (e.key === 'ArrowRight') {
+                step(1);
+            } else if (e.key === 'ArrowLeft') {
+                step(-1);
+            }
+        }
+
+        backdrop.addEventListener('click', closeLb);
+        closeBtn.addEventListener('click', closeLb);
+        prevBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            step(-1);
+        });
+        nextBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            step(1);
+        });
+
+        var touchStartX = null;
+        overlay.addEventListener(
+            'touchstart',
+            function (e) {
+                if (e.touches.length === 1) {
+                    touchStartX = e.touches[0].clientX;
+                }
+            },
+            { passive: true }
+        );
+        overlay.addEventListener(
+            'touchend',
+            function (e) {
+                if (touchStartX === null || !e.changedTouches.length) {
+                    return;
+                }
+                var dx = e.changedTouches[0].clientX - touchStartX;
+                touchStartX = null;
+                if (Math.abs(dx) < 48) {
+                    return;
+                }
+                if (dx < 0) {
+                    step(1);
+                } else {
+                    step(-1);
+                }
+            },
+            { passive: true }
+        );
+
+        overlay.appendChild(backdrop);
+        overlay.appendChild(img);
+        overlay.appendChild(closeBtn);
+        overlay.appendChild(prevBtn);
+        overlay.appendChild(nextBtn);
+        overlay.appendChild(hint);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+        render();
+        document.addEventListener('keydown', onKey);
+        requestAnimationFrame(function () {
+            overlay.classList.add('uz-lightbox-open');
+        });
+    }
+
     function initProductGallery() {
         var strip = document.getElementById('product-gallery-strip');
         var thumbs = document.querySelectorAll('#product-gallery-thumbs .product-gallery-thumb');
@@ -148,38 +308,80 @@
             });
         });
         var scrollThumbRaf = null;
-        strip.addEventListener('scroll', function () {
-            if (!slides.length) {
-                return;
-            }
-            if (scrollThumbRaf !== null) {
-                return;
-            }
-            scrollThumbRaf = requestAnimationFrame(function () {
-                scrollThumbRaf = null;
-                var w = strip.clientWidth;
-                if (w <= 0) {
+        strip.addEventListener(
+            'scroll',
+            function () {
+                if (!slides.length) {
                     return;
                 }
-                var mid = strip.scrollLeft + w * 0.5;
-                var best = 0;
-                var bestDist = Infinity;
-                for (var i = 0; i < slides.length; i++) {
-                    var el = slides[i];
-                    var c = el.offsetLeft + el.offsetWidth * 0.5;
-                    var d = Math.abs(c - mid);
-                    if (d < bestDist) {
-                        bestDist = d;
-                        best = i;
-                    }
+                if (scrollThumbRaf !== null) {
+                    return;
                 }
-                thumbs.forEach(function (t, j) {
-                    var on = j === best;
-                    t.classList.toggle('border-[#f97316]', on);
-                    t.classList.toggle('border-transparent', !on);
+                scrollThumbRaf = requestAnimationFrame(function () {
+                    scrollThumbRaf = null;
+                    var w = strip.clientWidth;
+                    if (w <= 0) {
+                        return;
+                    }
+                    var mid = strip.scrollLeft + w * 0.5;
+                    var best = 0;
+                    var bestDist = Infinity;
+                    for (var i = 0; i < slides.length; i++) {
+                        var el = slides[i];
+                        var c = el.offsetLeft + el.offsetWidth * 0.5;
+                        var d = Math.abs(c - mid);
+                        if (d < bestDist) {
+                            bestDist = d;
+                            best = i;
+                        }
+                    }
+                    thumbs.forEach(function (t, j) {
+                        var on = j === best;
+                        t.classList.toggle('border-[#f97316]', on);
+                        t.classList.toggle('border-transparent', !on);
+                    });
                 });
+            },
+            { passive: true }
+        );
+
+        slides.forEach(function (sl) {
+            sl.style.cursor = 'zoom-in';
+        });
+        strip.addEventListener('click', function (e) {
+            var t = e.target;
+            if (!t || t.tagName !== 'IMG') {
+                return;
+            }
+            var slide = t.closest('.product-gallery-slide');
+            if (!slide || !strip.contains(slide)) {
+                return;
+            }
+            e.preventDefault();
+            var list = [];
+            slides.forEach(function (fig) {
+                var im = fig.querySelector('img');
+                if (im && im.src) {
+                    list.push({ src: im.src, alt: im.getAttribute('alt') || '' });
+                }
             });
-        }, { passive: true });
+            var si = Array.prototype.indexOf.call(slides, slide);
+            openImageLightbox(list, si >= 0 ? si : 0);
+        });
+    }
+
+    function initCatalogCardImageZoom() {
+        document.querySelectorAll('.product-card .card-image img').forEach(function (im) {
+            im.style.cursor = 'zoom-in';
+            im.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!im.src) {
+                    return;
+                }
+                openImageLightbox([{ src: im.src, alt: im.getAttribute('alt') || '' }], 0);
+            });
+        });
     }
 
     function initMobileMenu() {
@@ -491,6 +693,7 @@
         initHeroTagline();
         initMobileMenu();
         initProductGallery();
+        initCatalogCardImageZoom();
         initOzonButtonHints();
         initOrderModal();
         initForms();

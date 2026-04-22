@@ -5,7 +5,7 @@
     <div class="mx-auto max-w-4xl text-center">
         <h1 class="text-4xl font-bold text-white sm:text-5xl">Инженерно-швейная мастерская</h1>
         <p class="mt-4 text-xl text-[#a0a0b8]">От идеи до эталона — проектирование и пошив текстильных изделий</p>
-        <p class="mt-4 text-[#6b6b80]">📍 Саратов, Солнечный</p>
+        <p class="mt-4 text-[#6b6b80]">📍 г. Саратов, ул. Киселёва, д. 18Б</p>
     </div>
 </section>
 

@@ -5,9 +5,9 @@
     <div class="mx-auto max-w-3xl">
         <h1 class="text-4xl font-bold text-white">Контакты</h1>
         <div class="mt-8 space-y-4 text-[#a0a0b8]">
-            <p><strong class="text-white">Адрес:</strong> Саратовская обл., пос. Солнечный</p>
-            <p><strong class="text-white">Телефон:</strong> <a href="tel:+79000000000" class="text-[#f97316] hover:underline">+7 (900) 000-00-00</a></p>
-            <p><strong class="text-white">Email:</strong> <a href="mailto:info@uzelok64.ru" class="text-[#f97316] hover:underline">info@uzelok64.ru</a></p>
+            <p><strong class="text-white">Адрес (юридический и фактический):</strong> г. Саратов, ул. Киселёва, д. 18Б</p>
+            <p><strong class="text-white">Телефон:</strong> <a href="tel:+79297700084" class="text-[#f97316] hover:underline">+7 (929) 770-00-84</a></p>
+            <p><strong class="text-white">Email:</strong> <a href="mailto:ananev-dm@mail.ru" class="text-[#f97316] hover:underline">ananev-dm@mail.ru</a></p>
         </div>
 
         <div class="mt-10 rounded-2xl border border-[#2a2a3e] bg-[#1e1e2e] p-6">
