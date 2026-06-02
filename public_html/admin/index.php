@@ -1,10 +1,13 @@
 <?php
 /**
- * Minimal Product Management Admin
+ * Product Management Admin
  * Access: /admin/index.php (protected by HTTP Basic Auth)
  *
- * Allows viewing and manually editing product cards.
- * Sync functionality remains in /admin/sync.php
+ * - Table with thumbnails, quick toggles (active / preserve_sync), prices, direct links
+ * - Advanced filters + search
+ * - Full edit form (incl. brand, seo_article, manual price_direct)
+ * - Recent orders with status management
+ * - Sync page is separate: /admin/sync.php
  */
 
 declare(strict_types=1);
