@@ -62,6 +62,7 @@ ROOT_ITEMS=(
   "database/migrations"
   "database/init.php"
   "scripts"
+  "user_content"
   "config/config.example.php"
   "composer.json"
   "composer.lock"

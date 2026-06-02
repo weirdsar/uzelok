@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Счёт-инвойс — УЗЕЛОК64 (uzelok64.ru)</title>
+  <style>
+    :root {
+      --text: #1a1a1a;
+      --muted: #555;
+      --border: #ccc;
+      --accent: #c2410c;
+      --bg: #fafafa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      line-height: 1.45;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 3rem;
+      background: var(--bg);
+    }
+    @media print {
+      body { background: #fff; padding: 1rem; }
+      .no-print { display: none !important; }
+    }
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      color: var(--accent);
+    }
+    .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    h2 {
+      font-size: 1rem;
+      margin: 1.75rem 0 0.75rem;
+      padding-bottom: 0.25rem;
+      border-bottom: 2px solid var(--accent);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 0.5rem 0 1rem;
+      background: #fff;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.5rem;
+      vertical-align: top;
+    }
+    th {
+      background: #f0f0f0;
+      text-align: left;
+      font-weight: 600;
+    }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    td.center { text-align: center; }
+    .subtotal td { font-weight: 600; background: #f7f7f7; }
+    .total-table td:last-child { text-align: right; font-weight: 600; }
+    .total-table tr:last-child td { font-size: 1.1rem; border-top: 2px solid var(--text); }
+    .note { font-size: 0.85rem; color: var(--muted); margin: 0.5rem 0 1rem; }
+    .footer { font-size: 0.8rem; color: var(--muted); margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    ul.summary { margin: 0.5rem 0 0; padding-left: 1.25rem; }
+    ul.summary li { margin: 0.35rem 0; }
+  </style>
+</head>
+<body>
+
+  <h1>Счёт-инвойс (смета работ)</h1>
+  <p class="meta">
+    <strong>Проект:</strong> витрина <strong>УЗЕЛОК64</strong> — <a href="https://uzelok64.ru">uzelok64.ru</a><br>
+    <strong>Предмет:</strong> создание и настройка сайта, интеграция Ozon, инфографика для карточек, уведомления MAX.<br>
+    <strong>Валюта:</strong> RUB &nbsp;|&nbsp; <strong>№ счёта:</strong> UZL-2026-001 &nbsp;|&nbsp; <strong>Дата:</strong> 30.03.2026
+  </p>
+
+  <p class="note">
+    <strong>О смете:</strong> пересмотренные ориентиры — усреднённые ставки по РФ для небольшого проекта и фриланса/небольшой студии
+    (не агентские «топ»-тарифы). Инфографика заложена как <strong>750&nbsp;₽/шт.</strong> (16 шт. × 750&nbsp;₽).
+  </p>
+
+  <h2>Реквизиты</h2>
+  <table>
+    <tr><th style="width:28%">Исполнитель</th><td>_________________________</td></tr>
+    <tr><th>ИНН / КПП</th><td>_________________________</td></tr>
+    <tr><th>Заказчик</th><td>_________________________</td></tr>
+    <tr><th>ИНН / КПП</th><td>_________________________</td></tr>
+  </table>
+
+  <h2>Блок A. Сайт: структура, вёрстка, формы</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>№</th>
+        <th>Наименование</th>
+        <th class="num">Кол-во</th>
+        <th>Ед.</th>
+        <th class="num">Цена, ₽</th>
+        <th class="num">Сумма, ₽</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>A1</td><td>Структура разделов (главная, каталог, карточка, контакты, мастерская, 404), сценарии заявок</td><td class="num">1</td><td>проект</td><td class="num">12&nbsp;000</td><td class="num">12&nbsp;000</td></tr>
+      <tr><td>A2</td><td>Вёрстка шаблонов (PHP), адаптив, стили, карточки товара, модальное окно заказа</td><td class="num">1</td><td>проект</td><td class="num">45&nbsp;000</td><td class="num">45&nbsp;000</td></tr>
+      <tr><td>A3</td><td>Серверная часть: роутинг, конфиг, вывод шаблонов</td><td class="num">1</td><td>проект</td><td class="num">18&nbsp;000</td><td class="num">18&nbsp;000</td></tr>
+      <tr><td>A4</td><td>Формы (AJAX), CSRF, валидация, запись заявок в SQLite</td><td class="num">1</td><td>комплекс</td><td class="num">15&nbsp;000</td><td class="num">15&nbsp;000</td></tr>
+      <tr><td>A5</td><td>Админка: авторизация, ручной запуск синхронизации Ozon</td><td class="num">1</td><td>модуль</td><td class="num">8&nbsp;000</td><td class="num">8&nbsp;000</td></tr>
+      <tr class="subtotal"><td colspan="5">Подытог блок A</td><td class="num">98&nbsp;000</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Блок B. База данных, деплой</h2>
+  <table>
+    <thead>
+      <tr><th>№</th><th>Наименование</th><th class="num">Кол-во</th><th>Ед.</th><th class="num">Цена, ₽</th><th class="num">Сумма, ₽</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>B1</td><td>Схема SQLite (товары, заявки, логи), инициализация</td><td class="num">1</td><td>проект</td><td class="num">12&nbsp;000</td><td class="num">12&nbsp;000</td></tr>
+      <tr><td>B2</td><td>PHP 8.4, Composer, автозагрузка</td><td class="num">1</td><td>комплекс</td><td class="num">6&nbsp;000</td><td class="num">6&nbsp;000</td></tr>
+      <tr><td>B3</td><td>Деплой на хостинг (Beget), скрипт выгрузки, пути</td><td class="num">1</td><td>комплекс</td><td class="num">10&nbsp;000</td><td class="num">10&nbsp;000</td></tr>
+      <tr><td>B4</td><td>Инструкции по обновлению, секреты вне репозитория</td><td class="num">1</td><td>пакет</td><td class="num">4&nbsp;000</td><td class="num">4&nbsp;000</td></tr>
+      <tr class="subtotal"><td colspan="5">Подытог блок B</td><td class="num">32&nbsp;000</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Блок C. Ozon: API, мульти-кабинет, каталог</h2>
+  <table>
+    <thead>
+      <tr><th>№</th><th>Наименование</th><th class="num">Кол-во</th><th>Ед.</th><th class="num">Цена, ₽</th><th class="num">Сумма, ₽</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>C1</td><td>Seller API: карточки, описания, атрибуты, изображения, цены</td><td class="num">1</td><td>проект</td><td class="num">45&nbsp;000</td><td class="num">45&nbsp;000</td></tr>
+      <tr><td>C2</td><td>Несколько кабинетов (`.ozon.env`), единый каталог</td><td class="num">1</td><td>модуль</td><td class="num">18&nbsp;000</td><td class="num">18&nbsp;000</td></tr>
+      <tr><td>C3</td><td>Витринный SKU vs id API, корректные ссылки Ozon</td><td class="num">1</td><td>комплекс</td><td class="num">18&nbsp;000</td><td class="num">18&nbsp;000</td></tr>
+      <tr><td>C4</td><td>Cron, логи, деактивация, вспомогательные скрипты</td><td class="num">1</td><td>комплекс</td><td class="num">15&nbsp;000</td><td class="num">15&nbsp;000</td></tr>
+      <tr><td>C5</td><td>SEO-материалы по товарам, сценарии наполнения</td><td class="num">1</td><td>пакет</td><td class="num">12&nbsp;000</td><td class="num">12&nbsp;000</td></tr>
+      <tr><td>C6</td><td>Сводная таблица `ozon.md`, сверка с витриной (22 активные карточки)</td><td class="num">1</td><td>комплекс</td><td class="num">8&nbsp;000</td><td class="num">8&nbsp;000</td></tr>
+      <tr class="subtotal"><td colspan="5">Подытог блок C</td><td class="num">116&nbsp;000</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Блок D. Инфографика (16 шт.)</h2>
+  <p class="note">В счёте: <strong>750&nbsp;₽ × 16 шт.</strong> = 12&nbsp;000&nbsp;₽ за подготовку изображений карточек плюс работы по привязке к SKU.</p>
+  <table>
+    <thead>
+      <tr><th>№</th><th>Наименование</th><th class="num">Кол-во</th><th>Ед.</th><th class="num">Цена, ₽</th><th class="num">Сумма, ₽</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>D1</td><td>Инфографика для карточек (`SKU_*_infografika.*`)</td><td class="num">16</td><td>шт.</td><td class="num">750</td><td class="num">12&nbsp;000</td></tr>
+      <tr><td>D2</td><td>Привязка к SKU, `infographics.map.json`, строгий синк</td><td class="num">1</td><td>комплекс</td><td class="num">10&nbsp;000</td><td class="num">10&nbsp;000</td></tr>
+      <tr class="subtotal"><td colspan="5">Подытог блок D</td><td class="num">22&nbsp;000</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Блок E. Уведомления</h2>
+  <table>
+    <thead>
+      <tr><th>№</th><th>Наименование</th><th class="num">Кол-во</th><th>Ед.</th><th class="num">Цена, ₽</th><th class="num">Сумма, ₽</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>E1</td><td>Уведомления в MAX (Bot API, заявки с сайта)</td><td class="num">1</td><td>модуль</td><td class="num">8&nbsp;000</td><td class="num">8&nbsp;000</td></tr>
+      <tr><td>E2</td><td>Заготовка Telegram в конфиге</td><td class="num">1</td><td>модуль</td><td class="num">2&nbsp;000</td><td class="num">2&nbsp;000</td></tr>
+      <tr><td>E3</td><td>Почта: копия заявки (при настройке `config`)</td><td class="num">1</td><td>опция</td><td class="num">2&nbsp;000</td><td class="num">2&nbsp;000</td></tr>
+      <tr class="subtotal"><td colspan="5">Подытог блок E</td><td class="num">12&nbsp;000</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Блок F. Проверки</h2>
+  <table>
+    <thead>
+      <tr><th>№</th><th>Наименование</th><th class="num">Кол-во</th><th>Ед.</th><th class="num">Цена, ₽</th><th class="num">Сумма, ₽</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>F1</td><td>Приёмка: заявки, БД, тест MAX</td><td class="num">1</td><td>комплекс</td><td class="num">5&nbsp;000</td><td class="num">5&nbsp;000</td></tr>
+      <tr><td>F2</td><td>Скрипт проверки `user_content` vs каталог</td><td class="num">1</td><td>пакет</td><td class="num">3&nbsp;000</td><td class="num">3&nbsp;000</td></tr>
+      <tr class="subtotal"><td colspan="5">Подытог блок F</td><td class="num">8&nbsp;000</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Итого</h2>
+  <table class="total-table">
+    <tr><td>Блок A — Сайт</td><td>98&nbsp;000&nbsp;₽</td></tr>
+    <tr><td>Блок B — БД и деплой</td><td>32&nbsp;000&nbsp;₽</td></tr>
+    <tr><td>Блок C — Ozon</td><td>116&nbsp;000&nbsp;₽</td></tr>
+    <tr><td>Блок D — Инфографика</td><td>22&nbsp;000&nbsp;₽</td></tr>
+    <tr><td>Блок E — Уведомления</td><td>12&nbsp;000&nbsp;₽</td></tr>
+    <tr><td>Блок F — Проверки</td><td>8&nbsp;000&nbsp;₽</td></tr>
+    <tr><td><strong>Всего без НДС</strong></td><td><strong>288&nbsp;000&nbsp;₽</strong></td></tr>
+    <tr><td>НДС 20% (при применении)</td><td>57&nbsp;600&nbsp;₽</td></tr>
+    <tr><td><strong>Всего с НДС 20%</strong></td><td><strong>345&nbsp;600&nbsp;₽</strong></td></tr>
+  </table>
+  <p class="note">При УСН без НДС к оплате ориентир <strong>288&nbsp;000&nbsp;₽</strong> (по договору).</p>
+
+  <h2>Краткое резюме</h2>
+  <ul class="summary">
+    <li>Сайт-витрина, каталог из Ozon, карточки, формы, SQLite.</li>
+    <li>Мульти-кабинет Ozon, витринный SKU, cron и скрипты.</li>
+    <li>16 инфографик под SKU, строгий учёт файлов.</li>
+    <li>Заявки в мессенджер MAX.</li>
+    <li>Деплой и внутренняя документация.</li>
+  </ul>
+
+  <p class="footer">Сметный документ. Для оплаты — счёт Исполнителя с реквизитами. Файл: <code>order.html</code> / <code>order.md</code>.</p>
+</body>
+</html>

@@ -61,7 +61,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['run_sync'])) 
     $infographicsResult = UserInfographicsSync::syncFromUserContent(
         $db->getConnection(),
         $srcDir,
-        $destDir
+        $destDir,
+        true
     );
 }
 
@@ -81,7 +82,13 @@ header('Content-Type: text/html; charset=UTF-8');
 </head>
 <body class="min-h-screen bg-[#0a0a0f] text-[#e8e8f0] p-8">
     <div class="max-w-2xl mx-auto">
-        <h1 class="text-2xl font-bold text-orange-500 mb-6">Синхронизация Ozon</h1>
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold text-orange-500">Синхронизация Ozon</h1>
+            <a href="/admin/" 
+               class="px-4 py-2 rounded-lg bg-[#1e1e2e] border border-[#2a2a3e] hover:bg-[#25253a] text-sm font-medium">
+                ← Управление товарами
+            </a>
+        </div>
 
         <?php if ($syncResult !== null) : ?>
             <div class="mb-6 rounded-lg border border-white/10 bg-white/5 p-4">

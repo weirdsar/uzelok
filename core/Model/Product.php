@@ -209,4 +209,51 @@ SQL;
 
         return (int) $count;
     }
+
+    /**
+     * Manual update of a product (admin panel).
+     * Only allows safe fields to be changed by hand.
+     *
+     * @param int $id
+     * @param array<string, mixed> $fields Allowed: title, description, price_direct, is_active, sort_order, seo_article, preserve_sync, brand_type
+     */
+    public function update(int $id, array $fields): bool
+    {
+        $allowed = [
+            'title',
+            'description',
+            'price_direct',
+            'is_active',
+            'sort_order',
+            'seo_article',
+            'preserve_sync',
+            'brand_type',
+        ];
+
+        $set = [];
+        $params = [':id' => $id];
+
+        foreach ($allowed as $key) {
+            if (array_key_exists($key, $fields)) {
+                $set[] = "$key = :$key";
+                $params[":$key"] = $fields[$key];
+            }
+        }
+
+        if ($set === []) {
+            return false;
+        }
+
+        $set[] = "updated_at = datetime('now')";
+
+        $sql = 'UPDATE products SET ' . implode(', ', $set) . ' WHERE id = :id';
+
+        try {
+            $this->db->query($sql, $params);
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return true;
+    }
 }

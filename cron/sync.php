@@ -49,7 +49,8 @@ $public = isset($config['paths']['public']) && is_string($config['paths']['publi
 $srcDir = $root . DIRECTORY_SEPARATOR . 'user_content';
 $destDir = $public . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'user-content';
 
-$inf = UserInfographicsSync::syncFromUserContent($db->getConnection(), $srcDir, $destDir);
+// strict: только SKU_* / ozon.* = products.sku (без карты и без LIKE по ozon_url) — как в ozon.md
+$inf = UserInfographicsSync::syncFromUserContent($db->getConnection(), $srcDir, $destDir, true);
 foreach ($inf['messages'] as $m) {
     logLine('INFO', 'Infographics: ' . $m, $logFile);
 }

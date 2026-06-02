@@ -9,6 +9,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Uzelok\Core\Database;
 use Uzelok\Core\Model\Product;
 use Uzelok\Core\Service\FormHandler;
+use Uzelok\Core\Service\MaxMessengerService;
 use Uzelok\Core\Service\TelegramService;
 
 use function Uzelok\Core\validateCsrfToken;
@@ -54,6 +55,9 @@ $telegram = new TelegramService(
     $logsPath . '/app.log',
 );
 
+$rootPath = dirname(__DIR__);
+$maxMessenger = MaxMessengerService::fromEnvFile($rootPath . DIRECTORY_SEPARATOR . '.max.env', $logsPath . '/app.log');
+
 $emailConfig = $config['email'] ?? [];
 if (!is_array($emailConfig)) {
     $emailConfig = [];
@@ -65,6 +69,7 @@ $handler = new FormHandler(
     $product,
     $emailConfig,
     $logsPath . '/app.log',
+    $maxMessenger,
 );
 
 $result = $handler->processOrderForm($_POST);

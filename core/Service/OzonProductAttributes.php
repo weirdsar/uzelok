@@ -281,8 +281,42 @@ final class OzonProductAttributes
     }
 
     /**
-     * Публичный ID карточки на Ozon (фрагмент URL /product/…). В ответах Seller API он в `product_id`;
-     * поле `id` иногда — другой внутренний идентификатор, его нельзя подставлять в ссылку на карточку.
+     * Идентификатор товара в кабинете продавца: поля `id` / `product_id` в /v3/product/info/list.
+     * Для запросов description, attributes, pictures в Seller API передаётся этот id (не путать с sku витрины).
+     */
+    public static function sellerProductIdForApi(array $item): int
+    {
+        $byId = (int) ($item['id'] ?? 0);
+        if ($byId > 0) {
+            return $byId;
+        }
+
+        return (int) ($item['product_id'] ?? 0);
+    }
+
+    /**
+     * Публичный SKU витрины Ozon — число в URL https://www.ozon.ru/product/…-{sku}/ (поле `sku` в ответе API).
+     * Поля `id` и `product_id` — другие сущности; подстановка их в URL даёт редирект/поиск не на ту карточку.
+     * Если числового `sku` нет — запасной вариант через product_id / id.
+     */
+    public static function storefrontSkuForCatalog(array $item): int
+    {
+        $raw = $item['sku'] ?? null;
+        if (is_int($raw)) {
+            return $raw > 0 ? $raw : 0;
+        }
+        if (is_string($raw) && $raw !== '' && ctype_digit($raw)) {
+            $v = (int) $raw;
+
+            return $v > 0 ? $v : 0;
+        }
+
+        return self::marketplaceProductIdFromItem($item);
+    }
+
+    /**
+     * @deprecated Используйте storefrontSkuForCatalog() для URL/БД и sellerProductIdForApi() для вызовов API.
+     * Оставлено для совместимости: product_id, иначе id.
      */
     public static function marketplaceProductIdFromItem(array $item): int
     {
@@ -295,26 +329,20 @@ final class OzonProductAttributes
     }
 
     /**
-     * Для строк attributes и вложенного `product_info`.
+     * Ключ строки в ответах attributes / вложенный product_info — id продавца для API.
      */
-    public static function marketplaceProductIdFromRow(array $row): int
+    public static function sellerProductIdFromRow(array $row): int
     {
-        $byPid = (int) ($row['product_id'] ?? 0);
-        if ($byPid > 0) {
-            return $byPid;
-        }
         $byId = (int) ($row['id'] ?? 0);
         if ($byId > 0) {
             return $byId;
         }
+        $byPid = (int) ($row['product_id'] ?? 0);
+        if ($byPid > 0) {
+            return $byPid;
+        }
         if (isset($row['product_info']) && is_array($row['product_info'])) {
-            $pi = $row['product_info'];
-            $nested = (int) ($pi['product_id'] ?? 0);
-            if ($nested > 0) {
-                return $nested;
-            }
-
-            return (int) ($pi['id'] ?? 0);
+            return self::sellerProductIdForApi($row['product_info']);
         }
 
         return 0;

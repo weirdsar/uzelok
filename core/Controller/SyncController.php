@@ -75,12 +75,14 @@ final class SyncController
                     if ($sku === '') {
                         continue;
                     }
-                    $activeSkus[] = $sku;
-                    $pid = OzonProductAttributes::marketplaceProductIdFromItem($item);
-                    $longDesc = $this->ozon->fetchProductDescription($pid);
+                    $apiPid = OzonProductAttributes::sellerProductIdForApi($item);
+                    $catSku = OzonProductAttributes::storefrontSkuForCatalog($item);
+                    $storageSku = $catSku > 0 ? (string) $catSku : $sku;
+                    $activeSkus[] = $storageSku;
+                    $longDesc = $apiPid > 0 ? $this->ozon->fetchProductDescription($apiPid) : '';
                     $imgUrl = OzonProductAttributes::extractPrimaryImageUrl($item);
-                    $videoCtx = $this->videoContextsForProductId($attrsByPid, $pid);
-                    $upsert = $this->mapItemToUpsert($item, $sku, null, $longDesc, $imgUrl, $videoCtx, []);
+                    $videoCtx = $this->videoContextsForProductId($attrsByPid, $apiPid);
+                    $upsert = $this->mapItemToUpsert($item, $storageSku, null, $longDesc, $imgUrl, $videoCtx, []);
                     $upsert = $this->maybeDownloadProductImage($upsert, (string) ($upsert['image_ozon_url'] ?? ''));
                     if ($this->product->upsertFromOzon($upsert)) {
                         ++$updated;
@@ -186,7 +188,7 @@ final class SyncController
                         if (!is_array($row)) {
                             continue;
                         }
-                        $op = OzonProductAttributes::marketplaceProductIdFromRow($row);
+                        $op = OzonProductAttributes::sellerProductIdForApi($row);
                         if ($op > 0) {
                             $pidsChunk[] = $op;
                         }
@@ -215,17 +217,18 @@ final class SyncController
                         if ($offerId === '') {
                             continue;
                         }
-                        $productId = OzonProductAttributes::marketplaceProductIdFromItem($item);
-                        $storageSku = $productId > 0
-                            ? (string) $productId
+                        $apiId = OzonProductAttributes::sellerProductIdForApi($item);
+                        $catSku = OzonProductAttributes::storefrontSkuForCatalog($item);
+                        $storageSku = $catSku > 0
+                            ? (string) $catSku
                             : $brand . '|' . $offerId;
                         $activeSkus[] = $storageSku;
-                        $longDesc = $productId > 0
-                            ? $catalog->fetchProductDescription($clientId, $apiKey, $productId)
+                        $longDesc = $apiId > 0
+                            ? $catalog->fetchProductDescription($clientId, $apiKey, $apiId)
                             : '';
                         $imgUrl = OzonProductAttributes::extractPrimaryImageUrl($item);
-                        $videoCtx = $this->videoContextsForProductId($attrsByPid, $productId);
-                        $extraPics = $picturesByPid[$productId] ?? [];
+                        $videoCtx = $this->videoContextsForProductId($attrsByPid, $apiId);
+                        $extraPics = $picturesByPid[$apiId] ?? [];
                         $upsert = $this->mapItemToUpsert($item, $storageSku, $brand, $longDesc, $imgUrl, $videoCtx, $extraPics);
                         $upsert = $this->maybeDownloadProductImage($upsert, (string) ($upsert['image_ozon_url'] ?? ''));
                         if ($this->product->upsertFromOzon($upsert)) {
@@ -348,7 +351,7 @@ final class SyncController
             if (!is_array($row)) {
                 continue;
             }
-            $p = OzonProductAttributes::marketplaceProductIdFromItem($row);
+            $p = OzonProductAttributes::sellerProductIdForApi($row);
             if ($p > 0) {
                 $pids[] = $p;
             }
@@ -380,7 +383,7 @@ final class SyncController
             if (!is_array($row)) {
                 continue;
             }
-            $pid = OzonProductAttributes::marketplaceProductIdFromRow($row);
+            $pid = OzonProductAttributes::sellerProductIdFromRow($row);
             if ($pid > 0) {
                 $map[$pid] = $row;
             }
@@ -436,7 +439,7 @@ final class SyncController
             return $direct;
         }
 
-        $idFromItem = OzonProductAttributes::marketplaceProductIdFromItem($item);
+        $idFromItem = OzonProductAttributes::storefrontSkuForCatalog($item);
         if ($idFromItem > 0) {
             return $this->ozon->buildOzonUrl($idFromItem);
         }

@@ -20,7 +20,7 @@ function formatPrice(int $priceRub): string
 }
 
 /**
- * Ссылка «Купить на Ozon»: числовой sku = публичный product_id из API (см. OzonProductAttributes::marketplaceProductIdFromItem).
+ * Ссылка «Купить на Ozon»: числовой sku в БД = публичный SKU витрины из поля `sku` в ответе Seller API (см. OzonProductAttributes::storefrontSkuForCatalog).
  * Fallback — ozon_url без query (utm/at), чтобы не тащить чужие карточки из устаревших данных.
  *
  * @param array<string, mixed> $product DB row
@@ -257,10 +257,14 @@ function generateCsrfToken(): string
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
-    $token = bin2hex(random_bytes(32));
-    $_SESSION['_csrf_token'] = $token;
+    // Only generate a new token if one doesn't already exist in the session.
+    // Regenerating on every request breaks form submissions.
+    if (empty($_SESSION['_csrf_token'])) {
+        $token = bin2hex(random_bytes(32));
+        $_SESSION['_csrf_token'] = $token;
+    }
 
-    return $token;
+    return $_SESSION['_csrf_token'];
 }
 
 function validateCsrfToken(string $token): bool

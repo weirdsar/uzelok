@@ -88,6 +88,7 @@ return [
         'chat_id' => 'YOUR_TELEGRAM_CHAT_ID',
         'base_url' => 'https://api.telegram.org',
     ],
+    // Уведомления в MAX: корневой файл `.max.env` (token, user_id получателя). См. MaxMessengerService.
     'email' => [
         'to' => 'ananev-dm@mail.ru',
         'from' => 'noreply@uzelok64.ru',

@@ -20,6 +20,7 @@ final class FormHandler
         private readonly Product $productModel,
         private readonly array $emailConfig,
         private readonly string $logPath,
+        private readonly ?MaxMessengerService $maxMessenger = null,
     ) {
     }
 
@@ -91,6 +92,11 @@ SQL;
         ];
         $text = $this->telegram->formatOrderNotification($telegramPayload);
         $this->telegram->sendMessage($text);
+
+        if ($this->maxMessenger !== null) {
+            $maxText = $this->maxMessenger->formatOrderNotification($telegramPayload);
+            $this->maxMessenger->sendMessage($maxText);
+        }
 
         $this->sendEmail([
             'name' => $name,

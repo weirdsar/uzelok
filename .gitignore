@@ -1,4 +1,5 @@
 .beget.env
+.max.env
 .ozon.env
 /vendor/
 /database/*.db
