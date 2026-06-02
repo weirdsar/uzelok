@@ -92,8 +92,15 @@ jobs:
             .env
             .ozon.env
             .beget.env
+            .max.env
             database/*.db
             logs/*.log
             memory.md
             README.md
+            order.md
+            order.html
+            ozon.md
+            **/tests/**
+            phpunit.xml*
             .cursorrules
+            **/*.example  # keep .example.php etc if needed, but md/html excluded above
