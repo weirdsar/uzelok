@@ -103,4 +103,3 @@ jobs:
             **/tests/**
             phpunit.xml*
             .cursorrules
-            **/*.example  # keep .example.php etc if needed, but md/html excluded above
