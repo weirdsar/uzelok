@@ -17,7 +17,6 @@ use Uzelok\Core\Model\Product;
 
 use function Uzelok\Core\generateCsrfToken;
 use function Uzelok\Core\validateCsrfToken;
-use function Uzelok\Core\productCardPrimaryImage;
 
 /** @var array<string, mixed> $config */
 $config = require dirname(__DIR__, 2) . '/config/config.php';
