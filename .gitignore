@@ -13,6 +13,7 @@ memory.md
 .idea/
 .vscode/
 config/config.php
+config/admin.hash
 .env
 *.DS_Store
 node_modules/

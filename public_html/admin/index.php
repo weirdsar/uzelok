@@ -21,18 +21,19 @@ use Uzelok\Core\Model\Product;
 use function Uzelok\Core\generateCsrfToken;
 use function Uzelok\Core\productCardPrimaryImage;
 use function Uzelok\Core\productOzonPurchaseUrl;
+use function Uzelok\Core\setAdminPassword;
 use function Uzelok\Core\validateCsrfToken;
+use function Uzelok\Core\verifyAdminPassword;
 
 /** @var array<string, mixed> $config */
 $config = require dirname(__DIR__, 2) . '/config/config.php';
 
 $adminUser = (string) ($config['admin']['username'] ?? 'admin');
-$adminPass = (string) ($config['admin']['password'] ?? '');
 
 $authUser = $_SERVER['PHP_AUTH_USER'] ?? '';
 $authPass = $_SERVER['PHP_AUTH_PW'] ?? '';
 
-if ($authUser !== $adminUser || !hash_equals($adminPass, $authPass)) {
+if ($authUser !== $adminUser || !verifyAdminPassword($authPass)) {
     header('WWW-Authenticate: Basic realm="Admin"');
     http_response_code(401);
     echo 'Authorization required';
@@ -113,6 +114,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_order_status']
     $qs = $_SERVER['QUERY_STRING'] ?? '';
     header('Location: /admin/' . ($qs ? '?' . $qs : ''));
     exit;
+}
+
+// === Handle admin password change (from within the protected admin) ===
+$adminPassResult = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_admin_password'])) {
+    if (!validateCsrfToken((string) ($_POST['csrf_token'] ?? ''))) {
+        $adminPassResult = ['success' => false, 'message' => 'CSRF validation failed'];
+    } else {
+        $current = (string) ($_POST['current_password'] ?? '');
+        $new1 = (string) ($_POST['new_password'] ?? '');
+        $new2 = (string) ($_POST['new_password_confirm'] ?? '');
+
+        if (!verifyAdminPassword($current)) {
+            $adminPassResult = ['success' => false, 'message' => 'Текущий пароль указан неверно'];
+        } elseif ($new1 === '' || $new1 !== $new2) {
+            $adminPassResult = ['success' => false, 'message' => 'Новый пароль и подтверждение не совпадают (минимум 8 символов)'];
+        } elseif (mb_strlen($new1) < 8) {
+            $adminPassResult = ['success' => false, 'message' => 'Пароль должен быть не короче 8 символов'];
+        } elseif (setAdminPassword($new1)) {
+            $adminPassResult = ['success' => true, 'message' => 'Пароль успешно изменён. Закройте вкладку и зайдите заново — браузер запомнил старые credentials Basic Auth.'];
+        } else {
+            $adminPassResult = ['success' => false, 'message' => 'Не удалось сохранить новый пароль'];
+        }
+    }
 }
 
 // (legacy toggle_field handler removed — quick_toggle forms below handle is_active/preserve_sync)
@@ -529,6 +554,44 @@ header('Content-Type: text/html; charset=UTF-8');
             </table>
         </div>
         <p class="mt-1 text-[10px] text-[#6b6b80]">Статус меняется автоматически при выборе в выпадашке. Заявки сохраняются в БД независимо от Telegram/MAX/email.</p>
+    </div>
+
+    <!-- Admin Password Change -->
+    <div class="mt-8 bg-[#12121a] border border-[#2a2a3e] rounded-2xl p-6 max-w-xl">
+        <h2 class="text-lg font-semibold mb-1">Смена пароля администратора</h2>
+        <p class="text-xs text-[#6b6b80] mb-4">Пароль хранится в виде безопасного хеша в <code>config/admin.hash</code> (файл не попадает в git и не деплоится с реальным паролем).</p>
+
+        <?php if ($adminPassResult): ?>
+            <div class="mb-4 p-3 rounded-lg text-sm <?= $adminPassResult['success'] ? 'bg-emerald-900/40 text-emerald-300' : 'bg-red-900/40 text-red-300' ?>">
+                <?= htmlspecialchars($adminPassResult['message']) ?>
+            </div>
+        <?php endif; ?>
+
+        <form method="post" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+            <input type="hidden" name="change_admin_password" value="1">
+
+            <div>
+                <label class="block text-sm mb-1 text-[#a0a0b8]">Текущий пароль</label>
+                <input type="password" name="current_password" required class="form-input w-full px-3 py-2 rounded" autocomplete="current-password">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm mb-1 text-[#a0a0b8]">Новый пароль</label>
+                    <input type="password" name="new_password" required minlength="8" class="form-input w-full px-3 py-2 rounded" autocomplete="new-password">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-[#a0a0b8]">Повторите новый пароль</label>
+                    <input type="password" name="new_password_confirm" required minlength="8" class="form-input w-full px-3 py-2 rounded" autocomplete="new-password">
+                </div>
+            </div>
+
+            <button type="submit" class="px-5 py-2 bg-orange-600 hover:bg-orange-500 text-sm font-medium rounded-xl">
+                Сменить пароль
+            </button>
+            <span class="text-xs text-[#6b6b80] ml-2">После смены используйте новый пароль при следующем входе в /admin/</span>
+        </form>
     </div>
 
     <!-- Edit Form -->

@@ -78,6 +78,19 @@ php scripts/download-images.php --demo
 2. Заполнить API-ключи Ozon, токен Telegram, email
 3. Запустить `php database/init.php`
 
+### Пароль в админку (`/admin/`)
+
+Пароль хранится в `config/config.php` → `admin.password` (или лучше в `config/admin.hash` после первой смены).
+
+Самый удобный способ поменять пароль:
+- Зайдите в `/admin/` со старым паролем
+- Внизу страницы найдите форму **«Смена пароля администратора»**
+- Введите текущий + новый пароль дважды
+
+Это создаст `config/admin.hash` с bcrypt-хешем (рекомендуемый способ).
+
+После смены пароля закройте вкладку браузера — Basic Auth кэшируется. При следующем входе введите новый пароль.
+
 ### Яндекс.Метрика (счётчик 108717789)
 
 Счётчик подключается в `templates/layout.php`; цели и фильтры настраиваются через Management API — см. **`scripts/metrica/README.md`**. Локально: скопируйте OAuth-переменные в `scripts/metrica/.env` (файл в `.gitignore`, не коммитить), затем `python3 uzelok64_counter_setup.py --apply`.

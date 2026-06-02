@@ -277,6 +277,107 @@ function validateCsrfToken(string $token): bool
     return $stored !== '' && hash_equals($stored, $token);
 }
 
+/**
+ * Returns the stored admin password (either a modern hash from config/admin.hash
+ * or the legacy plaintext value from config.php).
+ */
+function getAdminPassword(): string
+{
+    static $cached = null;
+    if ($cached !== null) {
+        return $cached;
+    }
+
+    $baseDir = dirname(__DIR__);
+    $hashFile = $baseDir . '/config/admin.hash';
+
+    if (is_readable($hashFile)) {
+        $hash = trim((string) @file_get_contents($hashFile));
+        if ($hash !== '') {
+            $cached = $hash;
+            return $cached;
+        }
+    }
+
+    // Fallback to config.php (backward compatibility)
+    $configPath = $baseDir . '/config/config.php';
+    if (is_readable($configPath)) {
+        $config = @include $configPath;
+        if (is_array($config)) {
+            $cached = (string) ($config['admin']['password'] ?? '');
+            return $cached;
+        }
+    }
+
+    $cached = '';
+    return $cached;
+}
+
+/**
+ * Verifies the password entered via HTTP Basic Auth.
+ * Supports password_hash() (preferred) and legacy plaintext.
+ */
+function verifyAdminPassword(string $input): bool
+{
+    $stored = getAdminPassword();
+    if ($stored === '') {
+        return false;
+    }
+
+    // Modern hash (bcrypt, argon2 etc.)
+    if (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$2a$') || str_starts_with($stored, '$argon2')) {
+        return password_verify($input, $stored);
+    }
+
+    // Legacy plaintext (timing-safe comparison)
+    return hash_equals($stored, $input);
+}
+
+/**
+ * Changes the admin password.
+ * Stores a secure hash in config/admin.hash (gitignored).
+ * Returns true on success.
+ */
+function setAdminPassword(string $newPassword): bool
+{
+    if (mb_strlen(trim($newPassword)) < 8) {
+        return false;
+    }
+
+    $hash = password_hash($newPassword, PASSWORD_DEFAULT);
+    if ($hash === false) {
+        return false;
+    }
+
+    $baseDir = dirname(__DIR__);
+    $hashFile = $baseDir . '/config/admin.hash';
+    $configDir = dirname($hashFile);
+
+    if (!is_dir($configDir)) {
+        @mkdir($configDir, 0755, true);
+    }
+
+    $fp = @fopen($hashFile, 'c+');
+    if ($fp === false) {
+        return false;
+    }
+
+    if (!flock($fp, LOCK_EX)) {
+        fclose($fp);
+        return false;
+    }
+
+    ftruncate($fp, 0);
+    fwrite($fp, $hash . "\n");
+    fflush($fp);
+    flock($fp, LOCK_UN);
+    fclose($fp);
+
+    @chmod($hashFile, 0600);
+
+    return true;
+}
+
 function logLine(string $level, string $message, string $logPath): void
 {
     $dir = dirname($logPath);

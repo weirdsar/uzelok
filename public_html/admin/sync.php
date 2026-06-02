@@ -9,16 +9,17 @@ use Uzelok\Core\Model\Product;
 use Uzelok\Core\Service\UserInfographicsSync;
 use Uzelok\Core\SyncBootstrap;
 
+use function Uzelok\Core\verifyAdminPassword;
+
 /** @var array<string, mixed> $config */
 $config = require dirname(__DIR__, 2) . '/config/config.php';
 
 $adminUser = (string) ($config['admin']['username'] ?? 'admin');
-$adminPass = (string) ($config['admin']['password'] ?? '');
 
 $authUser = $_SERVER['PHP_AUTH_USER'] ?? '';
 $authPass = $_SERVER['PHP_AUTH_PW'] ?? '';
 
-if ($authUser !== $adminUser || !hash_equals($adminPass, $authPass)) {
+if ($authUser !== $adminUser || !verifyAdminPassword($authPass)) {
     header('WWW-Authenticate: Basic realm="Admin"');
     http_response_code(401);
     echo 'Authorization required';

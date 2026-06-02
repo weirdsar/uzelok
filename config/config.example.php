@@ -96,6 +96,10 @@ return [
     ],
     'admin' => [
         'username' => 'admin',
+        // Пароль для HTTP Basic Auth (/admin/).
+        // Рекомендуется: после первого запуска используйте форму смены пароля внутри админки —
+        // тогда будет создан config/admin.hash с безопасным bcrypt-хешем.
+        // Старый plaintext в этом поле используется только как fallback.
         'password' => 'CHANGE_ME_SECURE_PASSWORD',
     ],
     'ozon_stores' => [
